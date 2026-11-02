@@ -7,7 +7,6 @@ pub const GITHUB_OWNER: &str = "david0304git";
 pub const GITHUB_REPO: &str = "reciprocal";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct GitHubRelease {
     tag_name: String,
     #[serde(default)]
@@ -166,6 +165,15 @@ mod tests {
         assert!(!is_newer("0.1.0", "0.1.0"));
         assert!(!is_newer("0.0.9", "0.1.0"));
         assert!(is_newer("1.0.0", "0.9.9"));
+    }
+
+    #[test]
+    fn parses_github_release_payload() {
+        let payload = r#"{"tag_name":"v0.2.0","name":"Reciprocal v0.2.0","html_url":"https://github.com/david0304git/reciprocal/releases/tag/v0.2.0","published_at":"2026-11-02T07:10:24Z"}"#;
+        let release: GitHubRelease = serde_json::from_str(payload).unwrap();
+        assert_eq!(normalize_version(&release.tag_name), "0.2.0");
+        assert_eq!(release.html_url, "https://github.com/david0304git/reciprocal/releases/tag/v0.2.0");
+        assert_eq!(release.name.as_deref(), Some("Reciprocal v0.2.0"));
     }
 
     #[test]

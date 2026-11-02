@@ -165,7 +165,7 @@ reciprocal/
 
 ```bash
 # Rust：schema、CRUD、驗證、備份還原、v1→v2 遷移、舊備份相容
-cd src-tauri && cargo test --lib        # 21 tests（含 Apple 分類／顏色、同步合併、日曆／卡片過濾、匯入範圍、更新版本比較、遷移）
+cd src-tauri && cargo test --lib        # 22 tests（含 Apple 分類／顏色、同步合併、日曆／卡片過濾、匯入範圍、GitHub 版本比較／JSON 解析、遷移）
 
 # 前端：嚴格型別檢查 + 打包
 npm run build
