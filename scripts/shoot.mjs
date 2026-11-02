@@ -86,6 +86,21 @@ assert((await page.locator(".home__date").innerText()).trim().length > 0, "主�
 assert((await page.locator(".habit-row").count()) === 0, "主頁不再顯示習慣區塊");
 assert((await page.locator(".timeline").count()) === 0, "主頁不再顯示今天的安排");
 assert((await page.locator(".home__panels .day-detail").count()) === 1, "主頁右下方顯示當日明細");
+const nowBox = await page.locator(".home-now").boundingBox();
+const detailBox = await page.locator(".home__panels .day-detail").boundingBox();
+assert(
+  Boolean(nowBox && detailBox && Math.abs(nowBox.height - detailBox.height) <= 1),
+  "目前安排與明細卡等高",
+);
+assert(
+  Boolean(
+    nowBox &&
+      detailBox &&
+      Math.abs(nowBox.y + nowBox.height - (detailBox.y + detailBox.height)) <= 1,
+  ),
+  "目前安排與明細卡底部對齊",
+);
+assert(Boolean(detailBox && detailBox.y + detailBox.height >= 700), "兩張卡貼近主頁底部");
 if (homeWeekday) {
   const currentText = await page.locator(".home-now").innerText();
   assert(

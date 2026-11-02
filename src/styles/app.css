@@ -3903,20 +3903,37 @@ html[data-platform="windows"] .main__drag {
 
 /* 主頁下方：目前安排 + 當日明細 */
 .home__clock {
-  flex: none;
-  padding: 5vh 0 4vh;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3vh 0 4vh;
 }
 
 .home__panels {
   display: grid;
   grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
+  margin-top: auto;
   padding-bottom: 8px;
+}
+
+.home__panels > * {
+  height: 100%;
+}
+
+.home__panels .day-detail {
+  display: flex;
+  flex-direction: column;
 }
 
 .home-now {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 18px 20px 20px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
