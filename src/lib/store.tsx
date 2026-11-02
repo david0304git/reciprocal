@@ -101,7 +101,7 @@ const readStoredTheme = (): ThemeMode => {
 
 const readStoredView = (): ViewKey => {
   const stored = storageGet("reciprocal.view");
-  const allowed: ViewKey[] = ["today", "habits", "calendar", "tasks", "stats", "settings"];
+  const allowed: ViewKey[] = ["today", "calendar", "tasks", "settings"];
   return allowed.includes(stored as ViewKey) ? (stored as ViewKey) : "today";
 };
 
@@ -498,7 +498,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const task = await api.saveTask(input);
         setData((current) => (current ? { ...current, tasks: upsert(current.tasks, task) } : current));
-        if (input.id) notify("事務已更新", "ok");
+        if (input.id) notify("安排已更新", "ok");
         return task;
       } catch (cause) {
         fail(cause);
@@ -527,7 +527,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setData((current) =>
           current ? { ...current, tasks: current.tasks.filter((task) => task.id !== id) } : current,
         );
-        notify("事務已刪除", "ok");
+        notify("安排已刪除", "ok");
       } catch (cause) {
         fail(cause);
       }

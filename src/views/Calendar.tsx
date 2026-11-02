@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight, Clock, MapPin, Plus, Timer } from "lucide-re
 import { useApp } from "../lib/store";
 import type { EventItem } from "../lib/types";
 import {
-  formatFullWeekday,
   formatMonthTitle,
   formatShort,
   hexAlpha,
@@ -13,26 +12,17 @@ import {
   todayISO,
   WEEKDAY_LABELS_MON,
 } from "../lib/date";
-import { buildLogIndex, isScheduledOn, logKey } from "../lib/stats";
-import { CheckCircle, EmptyState } from "../components/ui";
+import { EmptyState } from "../components/ui";
 import { EventForm } from "../components/EventForm";
 
 const WEEKDAY_LABELS_SUN = ["日", "一", "二", "三", "四", "五", "六"];
-const DAY_NAMES = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
-
-const weekdayOf = (isoDate: string): number => {
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const weekday = new Date(year, month - 1, day).getDay();
-  return weekday === 0 ? 7 : weekday;
-};
-
 const startOfDay = (isoDate: string): number => {
   const [year, month, day] = isoDate.split("-").map(Number);
   return new Date(year, month - 1, day).getTime();
 };
 
 export const CalendarView: React.FC = () => {
-  const { data, actions, settings, setView } = useApp();
+  const { data, settings } = useApp();
   const today = todayISO();
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState(today);
@@ -45,12 +35,6 @@ export const CalendarView: React.FC = () => {
     return () => window.clearInterval(timer);
   }, []);
 
-  const index = useMemo(() => buildLogIndex(data?.logs ?? []), [data?.logs]);
-  const habits = useMemo(
-    () => (data?.habits ?? []).filter((habit) => !habit.archived),
-    [data?.habits],
-  );
-  const blocks = data?.timetable ?? [];
 
   const eventStartMs = (event: EventItem): number => {
     const time = event.allDay || !event.startTime ? "00:00" : event.startTime;
@@ -141,30 +125,6 @@ export const CalendarView: React.FC = () => {
     (task) => task.dueDate && isSameMonth(new Date(`${task.dueDate}T00:00:00`), month),
   );
 
-  const selectedEvents = eventsByDate.get(selectedDate) ?? [];
-  const selectedTasks = (data?.tasks ?? [])
-    .filter((task) => task.dueDate === selectedDate)
-    .sort((a, b) => Number(a.status === "done") - Number(b.status === "done"));
-  const selectedWeekday = weekdayOf(selectedDate);
-  const selectedBlocks =
-    selectedWeekday >= 1 && selectedWeekday <= 5
-      ? blocks
-          .filter((block) => block.day === selectedWeekday)
-          .sort((a, b) => a.startTime.localeCompare(b.startTime))
-      : [];
-  const selectedHabits = habits.filter((habit) =>
-    isScheduledOn(habit, selectedDate, settings.weekStart),
-  );
-  const selectedDone = selectedHabits.filter((habit) =>
-    index.has(logKey(habit.id, selectedDate)),
-  );
-
-  const dayCompletion = (date: string): { done: number; total: number } => {
-    const scheduledHabits = habits.filter((habit) => isScheduledOn(habit, date, settings.weekStart));
-    const done = scheduledHabits.filter((habit) => index.has(logKey(habit.id, date))).length;
-    return { done, total: scheduledHabits.length };
-  };
-
   const openNewEvent = (event: EventItem | null = null) => {
     setEditingEvent(event);
     setEventFormOpen(true);
@@ -177,7 +137,7 @@ export const CalendarView: React.FC = () => {
           <p className="page__eyebrow">日曆</p>
           <h1 className="page__title">{formatMonthTitle(month)}</h1>
           <p className="page__subtitle">
-            {monthEvents.length} 個行程 · {monthTasks.length} 項到期事務 · 左側顯示下一個行程的倒數
+            {monthEvents.length} 個行程 · {monthTasks.length} 項到期安排 · 左側顯示下一個行程的倒數
           </p>
         </div>
         <div className="page__actions">
@@ -302,7 +262,6 @@ export const CalendarView: React.FC = () => {
                 const key = iso(date);
                 const events = eventsByDate.get(key) ?? [];
                 const taskCount = outstandingTasks.get(key) ?? 0;
-                const completion = dayCompletion(key);
                 const classes = [
                   "day",
                   !isSameMonth(date, month) ? "day--out" : "",
@@ -325,7 +284,7 @@ export const CalendarView: React.FC = () => {
                     <span className="day__top">
                       <span className="day__number">{date.getDate()}</span>
                       {taskCount > 0 ? (
-                        <span className="day__task-dot" title={`${taskCount} 項到期事務`} />
+                        <span className="day__task-dot" title={`${taskCount} 項到期安排`} />
                       ) : null}
                     </span>
                     <span className="day__events">
@@ -343,14 +302,6 @@ export const CalendarView: React.FC = () => {
                         <span className="day__more">+{events.length - 3}</span>
                       ) : null}
                     </span>
-                    {isSameMonth(date, month) && key <= today && completion.total > 0 ? (
-                      <span className="day__bar" aria-hidden="true">
-                        <span
-                          className="day__bar-fill"
-                          style={{ width: `${(completion.done / completion.total) * 100}%` }}
-                        />
-                      </span>
-                    ) : null}
                   </button>
                 );
               })}
@@ -360,184 +311,12 @@ export const CalendarView: React.FC = () => {
                 <i className="legend-dot legend-dot--event" /> 行程
               </span>
               <span>
-                <i className="legend-dot legend-dot--task" /> 到期事務
+                <i className="legend-dot legend-dot--task" /> 到期安排
               </span>
-              <span>
-                <i className="legend-dot legend-dot--habit" /> 習慣完成度
-              </span>
-              <span className="calendar__legend-tip">點選日期查看當天細節</span>
+              <span className="calendar__legend-tip">行程明細在主頁</span>
             </div>
           </section>
 
-          <section className="card day-detail">
-            <div className="day-detail__head">
-              <div>
-                <p className="page__eyebrow">{formatFullWeekday(selectedDate)}</p>
-                <h2 className="day-detail__title">{formatShort(selectedDate)}</h2>
-                <p className="day-detail__meta">
-                  {selectedEvents.length} 個行程 · {selectedBlocks.length} 項固定安排 · 習慣{" "}
-                  {selectedDone.length}/{selectedHabits.length}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="btn btn--soft btn--sm"
-                onClick={() => openNewEvent()}
-              >
-                <Plus size={14} /> 新增行程
-              </button>
-            </div>
-
-            <div className="day-detail__grid">
-              <div className="panel-section">
-                <div className="panel-section__head">
-                  <h3>行程</h3>
-                  <span className="badge">{selectedEvents.length}</span>
-                </div>
-                {selectedEvents.length === 0 ? (
-                  <p className="muted-inline">這天還沒有安排。</p>
-                ) : (
-                  <ul className="event-list">
-                    {selectedEvents.map((event) => (
-                      <li key={event.id}>
-                        <button
-                          type="button"
-                          className="event-row"
-                          onClick={() => openNewEvent(event)}
-                        >
-                          <span className="event-row__bar" style={{ background: event.color }} />
-                          <span className="event-row__body">
-                            <span className="event-row__title" title={event.title}>
-                              {event.title}
-                            </span>
-                            <span className="event-row__meta">
-                              <Clock size={11} />
-                              {event.allDay
-                                ? "全天"
-                                : `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}`}
-                              {event.location ? (
-                                <>
-                                  <MapPin size={11} /> {event.location}
-                                </>
-                              ) : null}
-                            </span>
-                          </span>
-                          <span className="chip chip--tiny">{event.category}</span>
-                          {event.source === "apple" ? (
-                            <span className="chip chip--tiny chip--apple">Apple</span>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="panel-section">
-                <div className="panel-section__head">
-                  <h3>固定安排</h3>
-                  <span className="badge">{selectedBlocks.length}</span>
-                  {selectedWeekday >= 1 && selectedWeekday <= 5 ? (
-                    <span className="panel-hint">{DAY_NAMES[selectedWeekday]}</span>
-                  ) : null}
-                </div>
-                {selectedBlocks.length === 0 ? (
-                  <p className="muted-inline">
-                    {selectedWeekday >= 1 && selectedWeekday <= 5
-                      ? "這天沒有固定安排。"
-                      : "週末沒有固定安排。"}
-                  </p>
-                ) : (
-                  <ul className="tt-list">
-                    {selectedBlocks.map((block) => (
-                      <li key={block.id} className="tt-list__row">
-                        <span className="tt-list__bar" style={{ background: block.color }} />
-                        <span className="tt-list__time">
-                          {block.startTime}–{block.endTime}
-                        </span>
-                        <span className="tt-list__title">{block.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <button type="button" className="link-inline" onClick={() => setView("tasks")}>
-                  在事務頁編輯固定安排
-                </button>
-              </div>
-
-              <div className="panel-section">
-                <div className="panel-section__head">
-                  <h3>到期事務</h3>
-                  <span className="badge">{selectedTasks.length}</span>
-                </div>
-                {selectedTasks.length === 0 ? (
-                  <p className="muted-inline">沒有到期的事務。</p>
-                ) : (
-                  <ul className="mini-list">
-                    {selectedTasks.map((task) => (
-                      <li key={task.id} className="mini-row">
-                        <CheckCircle
-                          checked={task.status === "done"}
-                          color={task.status === "done" ? "var(--accent)" : "var(--text-tertiary)"}
-                          size={22}
-                          label="切換完成"
-                          onClick={() =>
-                            void actions.setTaskStatus(
-                              task.id,
-                              task.status === "done" ? "todo" : "done",
-                            )
-                          }
-                        />
-                        <span
-                          className={`mini-row__text ${task.status === "done" ? "is-done" : ""}`}
-                        >
-                          {task.title}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="panel-section">
-                <div className="panel-section__head">
-                  <h3>當天習慣</h3>
-                  <span className="badge">{selectedHabits.length}</span>
-                  {selectedDate > today ? (
-                    <span className="panel-hint">未來的日期還不能打卡</span>
-                  ) : null}
-                </div>
-                {selectedHabits.length === 0 ? (
-                  <p className="muted-inline">這天沒有排定的習慣。</p>
-                ) : (
-                  <ul className="mini-list">
-                    {selectedHabits.map((habit) => {
-                      const done = index.has(logKey(habit.id, selectedDate));
-                      return (
-                        <li key={habit.id} className="mini-row">
-                          <span className={selectedDate > today ? "is-disabled" : undefined}>
-                            <CheckCircle
-                              checked={done}
-                              color={habit.color}
-                              size={22}
-                              label={`${habit.name} 打卡`}
-                              onClick={() =>
-                                void actions.toggleHabitLog(habit.id, selectedDate, !done)
-                              }
-                            />
-                          </span>
-                          <span className={`mini-row__text ${done ? "is-done" : ""}`}>
-                            <span className="mini-row__emoji">{habit.emoji}</span>
-                            {habit.name}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </section>
         </div>
       </div>
 

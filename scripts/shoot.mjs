@@ -42,113 +42,80 @@ const assert = (condition, message) => {
 await page.goto(base, { waitUntil: "networkidle" });
 await page.evaluate(() => localStorage.clear());
 await page.reload({ waitUntil: "networkidle" });
-await page.waitForSelector(".habit-row");
 
-/* 讓「今日」測試不受星期影響：為今天補一筆固定安排（週末補一筆行程） */
-const todayWeekday = await page.evaluate(() => {
+/* 為今天補一筆「現在」的固定安排，驗證主頁目前安排 */
+const homeWeekday = await page.evaluate(() => {
   const raw = JSON.parse(localStorage.getItem("reciprocal.browser-preview.v1"));
   const now = new Date();
   const jsDay = now.getDay();
   const day = jsDay >= 1 && jsDay <= 5 ? jsDay : 0;
-  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
-    now.getDate(),
-  ).padStart(2, "0")}`;
-  if (day) {
-    raw.timetable.push({
-      id: 9001,
-      day,
-      startTime: "07:00",
-      endTime: "07:30",
-      title: "今天固定安排",
-      notes: "",
-      color: "#5B7DB1",
-      createdAt: now.toISOString(),
-    });
-  } else {
-    raw.events.push({
-      id: 9001,
-      title: "今天測試行程",
-      notes: "",
-      date,
-      startTime: "07:00",
-      endTime: "07:30",
-      allDay: false,
-      color: "#5B7DB1",
-      location: "",
-      category: "個人",
-      source: "local",
-      externalId: null,
-      externalCalendar: null,
-      externalCalendarId: null,
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-    });
-  }
+  if (!day) return 0;
+  const pad = (value) => String(value).padStart(2, "0");
+  const start = new Date(now.getTime() - 60 * 60 * 1000);
+  if (start.getDate() !== now.getDate()) start.setHours(0, 0, 0, 0);
+  const end = new Date(now.getTime() + 60 * 60 * 1000);
+  if (end.getDate() !== now.getDate()) end.setHours(23, 59, 0, 0);
+  raw.timetable.push({
+    id: 9002,
+    day,
+    startTime: `${pad(start.getHours())}:${pad(start.getMinutes())}`,
+    endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
+    title: "溫書",
+    notes: "",
+    color: "#3F7C6A",
+    createdAt: now.toISOString(),
+  });
   localStorage.setItem("reciprocal.browser-preview.v1", JSON.stringify(raw));
   return day;
 });
 await page.reload({ waitUntil: "networkidle" });
-await page.waitForSelector(".habit-row");
 
-/* ---------------------------------------------------------------- today */
-const habitChecks = page.locator(".habit-row .check");
-await habitChecks.nth(0).click();
-await habitChecks.nth(1).click();
-await page.waitForTimeout(400);
-assert((await page.locator(".habit-row--done").count()) === 2, "兩個習慣可打卡");
-assert((await page.locator(".today-card__ratio").innerText()).trim() === "2/3", "今日進度 2/3");
-assert((await page.locator(".timeline__row").count()) >= 1, "今日時間軸含今日安排");
-if (todayWeekday) {
+/* ---------------------------------------------------------------- home */
+await page.waitForSelector(".home__time");
+assert(
+  /^現在時間 \d{2}:\d{2}$/.test(
+    (await page.locator(".home__time").getAttribute("aria-label")) ?? "",
+  ),
+  "主頁顯示現在時間",
+);
+const clockSize = await page
+  .locator(".home__time")
+  .evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
+assert(clockSize >= 96, "主頁時間為大字體");
+assert((await page.locator(".home__date").innerText()).trim().length > 0, "主頁顯示日期");
+assert((await page.locator(".habit-row").count()) === 0, "主頁不再顯示習慣區塊");
+assert((await page.locator(".timeline").count()) === 0, "主頁不再顯示今天的安排");
+assert((await page.locator(".home__panels .day-detail").count()) === 1, "主頁右下方顯示當日明細");
+if (homeWeekday) {
+  const currentText = await page.locator(".home-now").innerText();
   assert(
-    (await page.locator(".timeline").innerText()).includes("今天固定安排"),
-    "今日時間軸顯示今天固定的安排",
+    currentText.includes("目前安排") && currentText.includes("溫書"),
+    "主頁左下方顯示目前固定安排",
+  );
+} else {
+  assert(
+    (await page.locator(".home-now").innerText()).includes("週末沒有固定安排"),
+    "週末主頁顯示沒有固定安排",
   );
 }
+const navLabels = (await page.locator(".nav__label").allInnerTexts()).map((text) => text.trim());
+assert(
+  navLabels.join(",") === "主頁,日曆,安排,設定",
+  "導覽為 主頁／日曆／安排／設定",
+);
 await shot("today");
 
-/* ---------------------------------------------------------------- habits */
-await nav("習慣");
-await shot("habits");
-await page.locator(".habit-card").first().hover();
-await shot("habits-hover");
-
-await page.getByRole("button", { name: /新增習慣/ }).first().click();
-await page.waitForTimeout(300);
-await page.locator("#habit-form input.input").first().fill("拉伸 5 分鐘");
-const habitModalBox = await page.locator(".modal").boundingBox();
-assert(
-  habitModalBox && habitModalBox.y > 0 && habitModalBox.y + habitModalBox.height <= 860,
-  "習慣表單 modal 完整顯示",
-);
-await shot("habit-form");
-await page.getByRole("button", { name: "建立習慣" }).click();
-await page.waitForTimeout(600);
-assert((await page.locator(".habit-card").count()) === 4, "新增習慣後卡片數為 4");
-
-const lastCard = page.locator(".habit-card").last();
-await lastCard.hover();
-await lastCard.locator(".habit-card__delete").click();
-await page.waitForTimeout(300);
-await page.getByRole("button", { name: "刪除", exact: true }).click();
-await page.waitForTimeout(500);
-assert((await page.locator(".habit-card").count()) === 3, "可從卡片直接刪除習慣");
-
-await page.locator(".habit-card").first().click();
-await page.waitForTimeout(400);
-assert(await page.locator(".modal").isVisible(), "習慣詳情 modal 可見");
-await shot("habit-detail");
-await page.keyboard.press("Escape");
-
 /* ---------------------------------------------------------------- timetable */
-await nav("事務");
+await nav("安排");
 await shot("tasks");
 assert((await page.locator(".tt__hour").count()) === 24, "時間表顯示全天 24 個小時格");
 const hourLabels = (await page.locator(".tt__hour").allInnerTexts()).map((label) => label.trim());
 assert(hourLabels[0] === "00:00", "時間表從 00:00 開始");
 assert(hourLabels[hourLabels.length - 1] === "23:00", "時間表到 24:00 結束（最後一格 23:00）");
 
-const wedColumn = page.locator(".tt__col").nth(2);
-await wedColumn.locator(".tt__cell").nth(16).click(); // 全天 00:00 起算，第 16 格 = 16:00
+const targetColumnIndex = homeWeekday >= 1 && homeWeekday <= 5 ? homeWeekday % 5 : 2;
+const targetColumn = page.locator(".tt__col").nth(targetColumnIndex);
+await targetColumn.locator(".tt__cell").nth(16).click(); // 全天 00:00 起算，第 16 格 = 16:00
 await page.waitForTimeout(350);
 assert(await page.locator("#timetable-form").isVisible(), "點空白時段開啟安排表單");
 const timetableTimeSelects = page.locator("#timetable-form .time-field select");
@@ -196,7 +163,7 @@ await page.locator(".quick-add--wide input").press("Enter");
 await page.waitForTimeout(500);
 assert(
   (await page.locator(".task__title", { hasText: "寫下這週的三個重點" }).count()) === 1,
-  "快速新增事務成功",
+  "快速新增安排成功",
 );
 
 await page.getByRole("tab", { name: "已完成" }).click();
@@ -224,13 +191,14 @@ if ((await card.count()) && (await target.count())) {
 await page.locator(".task-panel .toolbar .btn--primary").click();
 await page.waitForTimeout(350);
 const taskBox = await page.locator(".modal").boundingBox();
-assert(taskBox && taskBox.y > 0 && taskBox.y + taskBox.height <= 860, "事務表單 modal 完整顯示");
+assert(taskBox && taskBox.y > 0 && taskBox.y + taskBox.height <= 860, "安排表單 modal 完整顯示");
 await shot("task-form");
 await page.keyboard.press("Escape");
 
 /* ---------------------------------------------------------------- calendar */
 await nav("日曆");
 await page.waitForTimeout(500);
+assert((await page.locator(".day-detail").count()) === 0, "日曆頁不再顯示下方明細卡");
 assert((await page.locator(".countdown-card").count()) >= 1, "倒數卡片有行程");
 const countdownText = await page.locator(".countdown-list").innerText();
 assert(/後|今天|進行中/.test(countdownText), "倒數卡片顯示剩餘時間");
@@ -300,16 +268,26 @@ await page.evaluate(() => {
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(500);
 
-const wednesday = page.locator('.day[aria-label*="11 月 4 日"]');
-await wednesday.click();
+await nav("主頁");
 await page.waitForTimeout(400);
 assert(
-  (await page.locator(".day-detail .tt-list").innerText()).includes("英文課"),
-  "當日細節顯示該星期的固定安排",
+  (await page.locator(".home__panels .day-detail").count()) === 1,
+  "主頁右下方顯示當日明細",
 );
-await shot("calendar-day");
+assert(
+  (await page.locator(".home__panels .day-detail .tt-list").count()) === 0,
+  "主頁明細不再顯示固定安排",
+);
+assert(
+  (await page.locator(".home__panels .day-detail .mini-list").count()) === 0,
+  "主頁明細不再顯示到期安排",
+);
+await page
+  .locator(".home__panels .day-detail")
+  .screenshot({ path: path.join(outDir, "home-day.png") });
+console.log("shot home-day");
 
-await page.locator(".day-detail .btn--soft").click();
+await page.locator(".home__panels .day-detail .btn--soft").click();
 await page.waitForTimeout(350);
 const eventBox = await page.locator(".modal").boundingBox();
 assert(
@@ -323,9 +301,7 @@ assert(
 await shot("event-form");
 await page.keyboard.press("Escape");
 
-/* ---------------------------------------------------------------- stats + settings */
-await nav("統計");
-await shot("stats");
+/* ---------------------------------------------------------------- settings */
 await nav("設定");
 await shot("settings");
 
@@ -338,35 +314,40 @@ await page.evaluate(() => {
 await page.reload({ waitUntil: "networkidle" });
 await nav("設定");
 await page.waitForTimeout(900);
-const importChoices = page.locator(
-  ".calendar-picker:not(.calendar-picker--cards) .calendar-choice",
-);
-const cardChoices = page.locator(".calendar-picker--cards .calendar-choice");
-assert((await importChoices.count()) === 5, "顯示要匯入的日曆清單");
+const importTrigger = page.getByRole("button", { name: "要匯入的日曆" });
+const cardTrigger = page.getByRole("button", { name: "倒數卡片顯示的日曆" });
+const dropdownPanel = page.locator(".calendar-multi__panel");
+
+await importTrigger.click();
+assert((await dropdownPanel.count()) === 1, "要匯入的日曆是下拉選單");
+assert((await dropdownPanel.locator('input[type="checkbox"]').count()) === 5, "下拉選單顯示 5 個日曆");
 assert(
-  (await page
-    .locator(".calendar-picker:not(.calendar-picker--cards) .calendar-choice input:checked")
-    .count()) === 2,
+  (await dropdownPanel.locator('input[type="checkbox"]:checked').count()) === 2,
   "匯入清單預設勾選 2 個",
 );
-assert((await cardChoices.count()) === 5, "顯示倒數卡片日曆清單");
+
+await page.keyboard.press("Escape");
+await page.waitForTimeout(150);
+await cardTrigger.click();
+assert((await dropdownPanel.count()) === 1, "倒數卡片是下拉選單");
+assert((await dropdownPanel.locator('input[type="checkbox"]').count()) === 5, "倒數選單顯示 5 個日曆");
 assert(
-  (await page.locator(".calendar-picker--cards .calendar-choice input:checked").count()) === 1,
+  (await dropdownPanel.locator('input[type="checkbox"]:checked').count()) === 1,
   "倒數清單獨立勾選 1 個",
 );
+await page.keyboard.press("Escape");
+await page.waitForTimeout(200);
+
 await page
   .locator('.card:has-text("Apple 日曆")')
   .screenshot({ path: path.join(outDir, "settings-apple-card.png") });
 console.log("shot settings-apple-card");
 
-await page
-  .locator('.calendar-picker:not(.calendar-picker--cards) .calendar-choice:has-text("24 節氣") input')
-  .check();
+await importTrigger.click();
+await dropdownPanel.locator('label:has-text("24 節氣") input').check();
 await page.waitForTimeout(1000);
 assert(
-  (await page
-    .locator(".calendar-picker:not(.calendar-picker--cards) .calendar-choice input:checked")
-    .count()) === 3,
+  (await dropdownPanel.locator('input[type="checkbox"]:checked').count()) === 3,
   "勾選要匯入的日曆後立即套用",
 );
 assert(
@@ -375,13 +356,16 @@ assert(
   )) === 3,
   "匯入日曆篩選已寫入設定",
 );
+await page.screenshot({ path: path.join(outDir, "settings-dropdown.png") });
+console.log("shot settings-dropdown");
 
-await page
-  .locator('.calendar-picker--cards .calendar-choice:has-text("生日") input')
-  .check();
+await page.keyboard.press("Escape");
+await page.waitForTimeout(150);
+await cardTrigger.click();
+await dropdownPanel.locator('label:has-text("生日") input').check();
 await page.waitForTimeout(500);
 assert(
-  (await page.locator(".calendar-picker--cards .calendar-choice input:checked").count()) === 2,
+  (await dropdownPanel.locator('input[type="checkbox"]:checked').count()) === 2,
   "倒數卡片日曆可獨立勾選",
 );
 assert(
@@ -390,6 +374,8 @@ assert(
   )).includes("CAL-BIRTHDAY"),
   "倒數卡片篩選已獨立寫入設定",
 );
+await page.keyboard.press("Escape");
+await page.waitForTimeout(200);
 await shot("settings-apple");
 
 const rangeSelects = page.locator(".range-control select");
@@ -603,11 +589,11 @@ assert(
   (await page.evaluate(() => document.documentElement.dataset.theme)) === "dark",
   "切換深色主題立即生效",
 );
-await nav("今日");
+await nav("主頁");
 await shot("today-dark");
 await nav("日曆");
 await shot("calendar-dark");
-await nav("事務");
+await nav("安排");
 await shot("tasks-dark");
 
 await page.reload({ waitUntil: "networkidle" });
@@ -638,7 +624,7 @@ const windowsShortcuts = (await windowsPage.locator(".nav__kbd").allInnerTexts()
 );
 assert(windowsPlatform === "windows", "Windows 平台樣式會啟用");
 assert(
-  windowsShortcuts[0] === "Ctrl+1" && windowsShortcuts[5] === "Ctrl+,",
+  windowsShortcuts[0] === "Ctrl+1" && windowsShortcuts[3] === "Ctrl+,",
   "Windows 側欄顯示 Ctrl 快捷鍵",
 );
 await windowsContext.close();

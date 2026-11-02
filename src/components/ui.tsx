@@ -1,11 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Check, X } from "lucide-react";
-import { addDays, parseISO, startOfWeek } from "date-fns";
 import { useApp } from "../lib/store";
-import type { Habit, HabitLog } from "../lib/types";
-import { formatShort, iso, todayISO } from "../lib/date";
-import { isScheduledOn, logKey } from "../lib/stats";
 
 /* ---------------------------------------------------------------- modal */
 
@@ -271,68 +267,6 @@ export const CheckCircle: React.FC<CheckProps> = ({
     {checked ? <Check size={Math.round(size * 0.52)} strokeWidth={3} /> : null}
   </button>
 );
-
-/* ---------------------------------------------------------------- heatmap */
-
-interface HeatmapProps {
-  habit: Habit;
-  index: Map<string, HabitLog>;
-  weeks?: number;
-  weekStart?: 0 | 1;
-  onSelect?: (date: string) => void;
-}
-
-export const Heatmap: React.FC<HeatmapProps> = ({
-  habit,
-  index,
-  weeks = 24,
-  weekStart = 1,
-  onSelect,
-}) => {
-  const today = parseISO(todayISO());
-  const lastColumn = startOfWeek(today, { weekStartsOn: weekStart });
-  const firstColumn = addDays(lastColumn, -(weeks - 1) * 7);
-  const columns = Array.from({ length: weeks }, (_, weekOffset) => {
-    const columnStart = addDays(firstColumn, weekOffset * 7);
-    return Array.from({ length: 7 }, (_, dayOffset) => addDays(columnStart, dayOffset));
-  });
-
-  return (
-    <div className="heatmap" role="grid" aria-label={`${habit.name} 打卡紀錄`}>
-      {columns.map((column, columnIndex) => (
-        <div className="heatmap__col" key={columnIndex} role="row">
-          {column.map((date) => {
-            const key = iso(date);
-            const isFuture = key > todayISO();
-            const done = index.has(logKey(habit.id, key));
-            const scheduled = isScheduledOn(habit, key, weekStart) && !isFuture;
-            const classes = [
-              "heat-cell",
-              done ? "heat-cell--done" : "",
-              !done && scheduled ? "heat-cell--miss" : "",
-              isFuture ? "heat-cell--future" : "",
-            ]
-              .filter(Boolean)
-              .join(" ");
-            return (
-              <button
-                key={key}
-                type="button"
-                role="gridcell"
-                className={classes}
-                style={done ? { background: habit.color, borderColor: habit.color } : undefined}
-                title={`${formatShort(key)}${done ? " · 已完成" : isFuture ? "" : " · 未記錄"}`}
-                onClick={() => onSelect?.(key)}
-                disabled={isFuture}
-                aria-label={`${key}${done ? " 已完成" : ""}`}
-              />
-            );
-          })}
-        </div>
-      ))}
-    </div>
-  );
-};
 
 /* ---------------------------------------------------------------- toast */
 

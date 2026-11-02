@@ -2,12 +2,12 @@
 
 > 把每天的小事記錄下來，讓生活慢慢回到自己手上。
 
-Reciprocal 是一個為個人打造的桌面應用：建立習慣、每天打勾、安排行程、追蹤待辦。所有資料都存在你自己的電腦上，完全離線。
+Reciprocal 是一個為個人打造的桌面應用：安排行程、追蹤待辦。主頁是大字時鐘，下方顯示目前固定安排與今天的明細。所有資料都存在你自己的電腦上，完全離線。
 
 - GitHub：<https://github.com/david0304git/reciprocal>
 - 下載：<https://github.com/david0304git/reciprocal/releases>
 
-![今日](docs/screenshots/today.png)
+![主頁](docs/screenshots/today.png)
 
 ## 平台與下載
 
@@ -16,7 +16,7 @@ Reciprocal 是一個為個人打造的桌面應用：建立習慣、每天打勾
 | **macOS** | macOS 10.15+（Apple 日曆同步需 macOS 14+） | `Reciprocal-<version>-macos-arm64.zip` |
 | **Windows** | Windows 10／11 x64，WebView2（Windows 11 內建；10 可能由安裝檔下載） | `Reciprocal_<version>_x64-setup.exe` |
 
-Windows 版與 macOS 版共用同一份 Rust／React 程式碼與 SQLite 格式；**Apple 日曆同步僅限 macOS**（EventKit），Windows 版其餘功能（習慣、日曆、週時間表、事務、統計、備份、更新檢查）完整可用。
+Windows 版與 macOS 版共用同一份 Rust／React 程式碼與 SQLite 格式；**Apple 日曆同步僅限 macOS**（EventKit），Windows 版其餘功能（主頁、日曆、週時間表、安排、備份、更新檢查）完整可用。
 
 Windows 安裝檔未簽章，SmartScreen 可能提示：點「更多資訊 → 仍要執行」。資料庫位置為 `%APPDATA%\com.lutszhong.reciprocal\reciprocal.db`。
 
@@ -33,34 +33,32 @@ npx tauri build --bundles nsis
 
 | 頁面 | 內容 |
 | --- | --- |
-| **今日** | 今日習慣打卡、進度環、快速新增今日事務、今天的安排（固定安排＋當日行程時間軸＋下一個倒數）、本週節奏 |
-| **習慣** | 每天／指定星期／每週 N 次三種頻率、連續天數、30 天達成率、24 週熱力圖、過去一年總覽、封存與刪除（卡片上可直接刪除） |
-| **日曆** | 月視圖、左側行程倒數（剩餘天／小時／分鐘）、當日細節（行程／固定安排／到期事務／習慣打卡）、可選 Apple 日曆分類與顏色 |
-| **事務** | **週時間表**（星期一至五 × 全天 00:00–24:00，24 小時制時間選擇，可捲動）＋待辦清單分頁（清單／看板、拖放、優先級、標籤、篩選） |
-| **統計** | 本月打卡、最長連續、近 30 天達成率、本月完成事務、30 天趨勢、8 週完成量、習慣一致性、自動觀察 |
-| **設定** | 主題（自動／淺色／深色）、一週起始日、資料庫位置與大小、JSON 匯出與還原、清除所有資料、**Apple 日曆整合（選用，僅 macOS）**、更新檢查 |
+| **主頁** | 大字時鐘（時:分＋秒）、日期、問候語；左下方顯示今天最近的固定安排，右下方只顯示今天的行程明細 |
+| **日曆** | 月視圖、左側行程倒數（剩餘天／小時／分鐘）、可選 Apple 日曆分類與顏色；當日明細已移到主頁 |
+| **安排** | **週時間表**（星期一至五 × 全天 00:00–24:00，24 小時制時間選擇，可捲動）＋待辦清單分頁（清單／看板、拖放、優先級、標籤、篩選） |
+| **設定** | 主題（自動／淺色／深色）、一週起始日、資料庫位置與大小、JSON 匯出與還原、清除所有資料、**Apple 日曆整合（選用，僅 macOS；日曆篩選為勾選式下拉選單）**、更新檢查 |
 
 - 介面繁體中文，跟隨系統淺色／深色外觀（macOS／Windows）。
-- 鍵盤快捷鍵：macOS 為 `⌘1`…`⌘5`、`⌘,`；Windows 為 `Ctrl+1`…`Ctrl+5`、`Ctrl+,`。
+- 鍵盤快捷鍵：macOS 為 `⌘1`…`⌘3`、`⌘,`；Windows 為 `Ctrl+1`…`Ctrl+3`、`Ctrl+,`。
 - macOS 採原生 Overlay 標題列（紅綠燈融入側欄）；Windows 使用系統標題列。兩者都可拖曳視窗頂部移動。
 
 ### 畫面
 
-| 習慣 | 日曆（左側倒數） |
+| 主頁 | 日曆（左側倒數） |
 | --- | --- |
-| ![習慣](docs/screenshots/habits.png) | ![日曆](docs/screenshots/calendar.png) |
+| ![主頁](docs/screenshots/today.png) | ![日曆](docs/screenshots/calendar.png) |
 
-| 週時間表 | 統計 |
+| 週時間表 | 設定 |
 | --- | --- |
-| ![週時間表](docs/screenshots/tasks.png) | ![統計](docs/screenshots/stats.png) |
+| ![週時間表](docs/screenshots/tasks.png) | ![設定](docs/screenshots/settings.png) |
 
-| 當日細節 | 固定安排編輯 |
+| 主頁明細 | 日曆多選下拉 |
 | --- | --- |
-| ![當日細節](docs/screenshots/calendar-day.png) | ![固定安排](docs/screenshots/timetable-form.png) |
+| ![主頁明細](docs/screenshots/home-day.png) | ![日曆多選](docs/screenshots/settings-dropdown.png) |
 
-| 習慣詳情 | 深色模式 |
-| --- | --- |
-| ![習慣詳情](docs/screenshots/habit-detail.png) | ![深色](docs/screenshots/today-dark.png) |
+| 深色模式 |
+| --- |
+| ![深色](docs/screenshots/today-dark.png) |
 
 ## 技術架構
 
@@ -83,7 +81,7 @@ React 視圖 ── invoke() ──▶ Rust command ──▶ SQLite（單一連
      └──────────── AppData（整份資料）◀─────────┘
 ```
 
-每次操作只回傳被修改的那一筆，前端做局部更新；啟動時一次載入全部資料（單人使用量級：數年資料也只有數 MB），統計與連續天數都在前端以 `date-fns` 計算。
+每次操作只回傳被修改的那一筆，前端做局部更新；啟動時一次載入全部資料（單人使用量級：數年資料也只有數 MB），日期與統計計算都在前端以 `date-fns` 處理。
 
 ### 資料表
 
@@ -110,6 +108,10 @@ Reciprocal 透過 Apple 的 **EventKit** 與 macOS「日曆」整合，在「設
 
 ![Apple 日曆設定](docs/screenshots/settings-apple-card.png)
 
+日曆篩選改為勾選式下拉選單：
+
+![日曆多選](docs/screenshots/settings-dropdown.png)
+
 建立行程時可直接選 Apple 分類：
 
 ![Apple 分類](docs/screenshots/event-form-apple.png)
@@ -123,8 +125,8 @@ Reciprocal 透過 Apple 的 **EventKit** 與 macOS「日曆」整合，在「設
 - **停用**：關閉開關即停止同步；已匯入的行程會保留（仍為唯讀），可手動刪除
 - **權限被拒**：請到「系統設定 → 隱私權與安全性 → 日曆」開啟 Reciprocal
 - **兩層日曆過濾**：
-  - 「要匯入的日曆」：取消勾選的日曆不會匯入，行程從 Reciprocal 移除（月曆、倒數、當日細節都看不到）
-  - 「倒數卡片顯示的日曆」：只影響日曆頁左側的倒數卡片；假期等行程仍會保留在月曆與當日細節，App 內建立的行程一律顯示
+  - 「要匯入的日曆」：以勾選式下拉選單取消勾選的日曆不會匯入，行程從 Reciprocal 移除（月曆、倒數、主頁明細都看不到）
+  - 「倒數卡片顯示的日曆」：只影響日曆頁左側的倒數卡片；假期等行程仍會保留在月曆與主頁明細，App 內建立的行程一律顯示
   - 若發現更早的月份沒有資料，把「匯入時間範圍 → 過去」調長（例如 3 年）再按「立即同步」即可
 - 兩層設定互相獨立：例如可以匯入公眾假期放在月曆，但倒數卡片只看工作與個人行程
 
@@ -155,7 +157,7 @@ npm run tauri build
 RECIPROCAL_DATA_DIR=/tmp/reciprocal-dev npm run tauri dev
 ```
 
-- 第一次啟動會寫入一份示範資料（3 個習慣、8 筆打卡、2 個行程、3 項事務），可在「設定 → 清除所有資料」一次清空。
+- 第一次啟動會寫入一份示範資料（3 個習慣、8 筆打卡、2 個行程、3 項安排）；習慣資料保留但已無 UI，可在「設定 → 清除所有資料」一次清空。
 - 備份是純 JSON（含版本與匯出時間），可用「設定 → 匯出」與「從備份還原」搬移或備份。
 
 ## 專案結構
@@ -164,7 +166,7 @@ RECIPROCAL_DATA_DIR=/tmp/reciprocal-dev npm run tauri dev
 reciprocal/
 ├── src/                     # React 前端
 │   ├── components/          # Modal、表單、熱力圖、側欄等
-│   ├── views/               # 今日 / 習慣 / 日曆 / 事務（週時間表＋待辦）/ 統計 / 設定
+│   ├── views/               # 主頁（時鐘）/ 日曆 / 安排（週時間表＋待辦）/ 設定
 │   ├── lib/                 # API 封裝、型別、日期、統計、狀態
 │   └── styles/app.css       # 設計系統與主題
 ├── src-tauri/
@@ -190,10 +192,10 @@ cd src-tauri && cargo test --lib        # 22 tests（含 Apple 分類／顏色�
 # 前端：嚴格型別檢查 + 打包
 npm run build
 
-# 互動檢查（需要 dev server）：打卡、建立習慣、快速新增、看板拖曳、
+# 互動檢查（需要 dev server）：主頁時鐘、快速新增、看板拖曳、
 # modal 定位、主題切換與持久化
 npm run dev          # 另開一個終端
-npm run shots        # 46 checks（需要本機 Chrome）
+npm run shots        # 65 checks（需要本機 Chrome）
 ```
 
 實機驗證方式：以 `RECIPROCAL_DATA_DIR` 啟動建置後的 `.app`，確認 SQLite 建表與種子資料寫入，並從日誌確認 WebView 載入後成功呼叫 `load_app`（`ui ready: 3 habits, 8 logs, 3 tasks`）。
@@ -208,11 +210,13 @@ npm run shots        # 46 checks（需要本機 Chrome）
 - 週時間表顯示全天 00:00–24:00，內容區可上下捲動。
 - 這兩層過濾只影響 Reciprocal 的顯示與匯入，不會修改或刪除你的 Apple 日曆。
 - 沒有系統通知／提醒（需要額外權限與排程器）。
-- 行程目前是單日事件，沒有重複規則（每週、每年）；每週重複的固定安排請用「事務 → 週時間表」。
+- 習慣與打卡 UI 已移除；既有習慣／打卡資料仍保留在 SQLite 與備份中，但目前沒有管理或打卡入口。
+- 行程目前是單日事件，沒有重複規則（每週、每年）；每週重複的固定安排請用「安排 → 週時間表」。
 - 固定安排只支援星期一至五（依目前需求），週末不顯示。
 - 同一時段可以建立多筆安排，重疊時會疊在一起，尚未有衝突提示。
 - 倒數卡片每 30 秒更新一次；只列出尚未結束的行程。
-- 事務沒有子任務與附件。
+- 主頁的「目前安排」只看每週固定安排（週一至週五），不含單次行程；明細卡固定在主頁顯示今天，且只列行程，不列固定安排或到期安排。
+- 安排沒有子任務與附件。
 - 沒有雲端同步，這是刻意的本機優先設計。
 - 尚未做 Developer ID 簽章與公證，分享給其他人需要在系統設定中允許開啟。
 

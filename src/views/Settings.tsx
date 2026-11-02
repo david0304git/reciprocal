@@ -17,6 +17,7 @@ import { isTauri } from "../lib/api";
 import { defaultBackupName, exportInBrowser, pickExportPath, pickImportPath } from "../lib/files";
 import type { AppleCalendarInfo, AppleStatus, StorageInfo } from "../lib/types";
 import { ConfirmDialog, Segmented } from "../components/ui";
+import { CalendarMultiSelect } from "../components/CalendarMultiSelect";
 
 const calendarKindLabel = (calendar: {
   kind: string;
@@ -370,7 +371,7 @@ export const SettingsView: React.FC = () => {
         <div className="setting-row">
           <div className="setting-row__text">
             <p className="setting-row__title">匯出備份</p>
-            <p className="setting-row__desc">習慣、打卡、行程與事務會一起匯出成一份 JSON 檔。</p>
+            <p className="setting-row__desc">習慣、打卡、行程與安排會一起匯出成一份 JSON 檔。</p>
           </div>
           <button type="button" className="btn btn--soft" onClick={handleExport} disabled={exporting}>
             <Download size={14} /> {exporting ? "匯出中…" : "匯出"}
@@ -390,7 +391,7 @@ export const SettingsView: React.FC = () => {
         <div className="setting-row setting-row--danger">
           <div className="setting-row__text">
             <p className="setting-row__title">清除所有資料</p>
-            <p className="setting-row__desc">刪除全部習慣、打卡、行程與事務，這個動作無法復原。</p>
+            <p className="setting-row__desc">刪除全部習慣、打卡、行程與安排，這個動作無法復原。</p>
           </div>
           <button type="button" className="btn btn--danger" onClick={() => setConfirmClear(true)}>
             <Trash size={14} /> 清除
@@ -482,128 +483,57 @@ export const SettingsView: React.FC = () => {
 
           {apple.enabled ? (
             <>
-            <div className="calendar-picker">
-              <div className="calendar-picker__head">
-                <div>
-                  <p className="setting-row__title">要匯入的日曆</p>
-                  <p className="setting-row__desc">
-                    取消勾選「24 節氣」「公眾假期」等日曆，就不會再匯入，也不會出現在月曆與資料中。
-                    只想讓它們不出現在倒數卡片，請用下方的「倒數卡片顯示的日曆」。
-                  </p>
-                </div>
-                <div className="calendar-picker__actions">
-                  {calendarBusy ? <span className="panel-hint">同步中…</span> : null}
-                  <button
-                    type="button"
-                    className="mini-btn"
-                    onClick={() => handleCalendarAll(true)}
-                    disabled={calendarBusy || calendars.length === 0}
-                  >
-                    全選
-                  </button>
-                  <button
-                    type="button"
-                    className="mini-btn"
-                    onClick={() => handleCalendarAll(false)}
-                    disabled={calendarBusy || calendars.length === 0}
-                  >
-                    全不選
-                  </button>
-                </div>
-              </div>
-
-              {calendarsLoading ? (
-                <p className="muted-inline">正在讀取 Apple 日曆…</p>
-              ) : calendars.length === 0 ? (
-                <p className="muted-inline">沒有可匯入的日曆。</p>
-              ) : (
-                <div className="calendar-choice-list">
-                  {calendars.map((calendar) => {
-                    const checked = selectedCalendars.includes(calendar.id);
-                    const kindLabel = calendarKindLabel(calendar);
-                    return (
-                      <label
-                        key={calendar.id}
-                        className={`calendar-choice ${checked ? "is-on" : ""}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => handleCalendarToggle(calendar.id)}
-                          disabled={calendarBusy}
-                        />
-                        <span className="calendar-choice__title">{calendar.title}</span>
-                        <span className="calendar-choice__meta">{kindLabel}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-
-              {selectedCalendars.length === 0 ? (
-                <p className="form-hint">
-                  目前沒有匯入任何 Apple 日曆；App 的行程仍會寫入「Reciprocal」日曆。
+            <div className="setting-row setting-row--calendar">
+              <div className="setting-row__text">
+                <p className="setting-row__title">要匯入的日曆</p>
+                <p className="setting-row__desc">
+                  取消勾選「24 節氣」「公眾假期」等日曆，就不會再匯入，也不會出現在月曆與資料中。
+                  只想讓它們不出現在倒數卡片，請用下方的「倒數卡片顯示的日曆」。
                 </p>
-              ) : null}
-            </div>
-
-            <div className="calendar-picker calendar-picker--cards">
-              <div className="calendar-picker__head">
-                <div>
-                  <p className="setting-row__title">倒數卡片顯示的日曆</p>
-                  <p className="setting-row__desc">
-                    只影響日曆頁左側的倒數卡片；取消的行程仍會出現在月曆與當日細節。App 內建立的行程一律顯示。
-                  </p>
-                </div>
-                <div className="calendar-picker__actions">
-                  <button
-                    type="button"
-                    className="mini-btn"
-                    onClick={() => handleCardAll(true)}
-                    disabled={calendars.length === 0}
-                  >
-                    全選
-                  </button>
-                  <button
-                    type="button"
-                    className="mini-btn"
-                    onClick={() => handleCardAll(false)}
-                    disabled={calendars.length === 0}
-                  >
-                    全不選
-                  </button>
-                </div>
+                {calendarBusy ? <p className="form-hint">同步中…</p> : null}
               </div>
-
-              {calendarsLoading ? (
-                <p className="muted-inline">正在讀取 Apple 日曆…</p>
-              ) : calendars.length === 0 ? (
-                <p className="muted-inline">沒有可選擇的日曆。</p>
-              ) : (
-                <div className="calendar-choice-list">
-                  {calendars.map((calendar) => {
-                    const checked = cardSelectedCalendars.includes(calendar.id);
-                    const imported = selectedCalendars.includes(calendar.id);
-                    return (
-                      <label
-                        key={calendar.id}
-                        className={`calendar-choice ${checked ? "is-on" : ""} ${imported ? "" : "is-muted"}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => handleCardToggle(calendar.id)}
-                        />
-                        <span className="calendar-choice__title">{calendar.title}</span>
-                        <span className="calendar-choice__meta">
-                          {imported ? calendarKindLabel(calendar) : "未匯入"}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
+              <CalendarMultiSelect
+                ariaLabel="要匯入的日曆"
+                calendars={calendars}
+                selected={selectedCalendars}
+                onToggle={handleCalendarToggle}
+                onAll={handleCalendarAll}
+                disabled={calendarBusy}
+                loading={calendarsLoading}
+                emptyText="沒有可匯入的日曆"
+                metaFor={calendarKindLabel}
+              />
             </div>
+
+            {selectedCalendars.length === 0 ? (
+              <p className="form-hint">
+                目前沒有匯入任何 Apple 日曆；App 的行程仍會寫入「Reciprocal」日曆。
+              </p>
+            ) : null}
+
+            <div className="setting-row setting-row--calendar">
+              <div className="setting-row__text">
+                <p className="setting-row__title">倒數卡片顯示的日曆</p>
+                <p className="setting-row__desc">
+                  只影響日曆頁左側的倒數卡片；取消的行程仍會出現在月曆與主頁明細。App 內建立的行程一律顯示。
+                </p>
+              </div>
+              <CalendarMultiSelect
+                ariaLabel="倒數卡片顯示的日曆"
+                calendars={calendars}
+                selected={cardSelectedCalendars}
+                onToggle={handleCardToggle}
+                onAll={handleCardAll}
+                loading={calendarsLoading}
+                emptyText="沒有可選擇的日曆"
+                metaFor={(calendar) =>
+                  selectedCalendars.includes(calendar.id)
+                    ? calendarKindLabel(calendar)
+                    : "未匯入"
+                }
+              />
+            </div>
+
             </>
           ) : null}
 
@@ -771,7 +701,7 @@ export const SettingsView: React.FC = () => {
         </div>
         <div className="about">
           <p>
-            Reciprocal 是一個專注在「日常往返」的個人工具：建立習慣、每天打卡、安排行程、追蹤事務。
+            Reciprocal 是一個專注在「日常往返」的個人工具：安排行程、追蹤待辦，把每天過得清楚一點。
             名字來自一種相信——你對生活付出的，生活會用另一種方式回到你身上。
           </p>
           <p className="about__meta">Tauri 2 · React · Rust · SQLite · 完全離線</p>
@@ -790,7 +720,7 @@ export const SettingsView: React.FC = () => {
       <ConfirmDialog
         open={confirmClear}
         title="清除所有資料？"
-        message="所有習慣、打卡紀錄、行程與事務都會被刪除，且無法復原。"
+        message="所有習慣、打卡紀錄、行程與安排都會被刪除，且無法復原。"
         confirmLabel="確定清除"
         onClose={() => setConfirmClear(false)}
         onConfirm={() => {

@@ -4,20 +4,16 @@ import { AppProvider, useApp } from "./lib/store";
 import { Sidebar } from "./components/Sidebar";
 import { ToastStack } from "./components/ui";
 import { TodayView } from "./views/Today";
-import { HabitsView } from "./views/Habits";
 import { CalendarView } from "./views/Calendar";
 import { ScheduleView } from "./views/Schedule";
-import { StatsView } from "./views/Stats";
 import { SettingsView } from "./views/Settings";
 import type { ViewKey } from "./lib/types";
 import { api } from "./lib/api";
 
 const VIEWS: Record<ViewKey, React.ComponentType> = {
   today: TodayView,
-  habits: HabitsView,
   calendar: CalendarView,
   tasks: ScheduleView,
-  stats: StatsView,
   settings: SettingsView,
 };
 
@@ -90,10 +86,8 @@ const Shell: React.FC = () => {
       if (!(event.metaKey || event.ctrlKey)) return;
       const shortcuts: Record<string, ViewKey> = {
         "1": "today",
-        "2": "habits",
-        "3": "calendar",
-        "4": "tasks",
-        "5": "stats",
+        "2": "calendar",
+        "3": "tasks",
         ",": "settings",
       };
       const target = shortcuts[event.key];

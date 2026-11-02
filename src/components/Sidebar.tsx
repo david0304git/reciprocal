@@ -1,10 +1,7 @@
-import React, { useMemo } from "react";
-import { CalendarDays, ChartColumn, ListChecks, Settings as SettingsIcon, Sprout, Sun } from "lucide-react";
+import React from "react";
+import { CalendarDays, ListChecks, Settings as SettingsIcon, Sun } from "lucide-react";
 import { useApp } from "../lib/store";
 import type { ViewKey } from "../lib/types";
-import { buildLogIndex, isScheduledOn, logKey } from "../lib/stats";
-import { todayISO } from "../lib/date";
-import { ProgressRing } from "./ui";
 
 const NAV_ITEMS: Array<{
   key: ViewKey;
@@ -12,11 +9,9 @@ const NAV_ITEMS: Array<{
   icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
   shortcut: string;
 }> = [
-  { key: "today", label: "今日", icon: Sun, shortcut: "1" },
-  { key: "habits", label: "習慣", icon: Sprout, shortcut: "2" },
-  { key: "calendar", label: "日曆", icon: CalendarDays, shortcut: "3" },
-  { key: "tasks", label: "事務", icon: ListChecks, shortcut: "4" },
-  { key: "stats", label: "統計", icon: ChartColumn, shortcut: "5" },
+  { key: "today", label: "主頁", icon: Sun, shortcut: "1" },
+  { key: "calendar", label: "日曆", icon: CalendarDays, shortcut: "2" },
+  { key: "tasks", label: "安排", icon: ListChecks, shortcut: "3" },
 ];
 
 const BrandMark: React.FC = () => (
@@ -28,16 +23,9 @@ const BrandMark: React.FC = () => (
 );
 
 export const Sidebar: React.FC = () => {
-  const { data, view, setView, settings } = useApp();
+  const { view, setView } = useApp();
   const isMac = document.documentElement.dataset.platform !== "windows";
   const shortcutPrefix = isMac ? "⌘" : "Ctrl+";
-  const today = todayISO();
-  const index = useMemo(() => buildLogIndex(data?.logs ?? []), [data?.logs]);
-  const habits = (data?.habits ?? []).filter((habit) => !habit.archived);
-  const scheduled = habits.filter((habit) => isScheduledOn(habit, today, settings.weekStart));
-  const done = scheduled.filter((habit) => index.has(logKey(habit.id, today)));
-  const ratio = scheduled.length === 0 ? 0 : done.length / scheduled.length;
-  const remaining = scheduled.length - done.length;
 
   return (
     <aside className="sidebar">
@@ -75,24 +63,6 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       <div className="sidebar__spacer" />
-
-      <button type="button" className="today-card" onClick={() => setView("today")}>
-        <ProgressRing value={ratio} size={42} stroke={4}>
-          <span className="today-card__ratio">
-            {done.length}/{scheduled.length}
-          </span>
-        </ProgressRing>
-        <span className="today-card__text">
-          <span className="today-card__title">今日進度</span>
-          <span className="today-card__sub">
-            {scheduled.length === 0
-              ? "還沒有排定的習慣"
-              : remaining === 0
-                ? "今天全部完成了"
-                : `還有 ${remaining} 項`}
-          </span>
-        </span>
-      </button>
 
       <button
         type="button"

@@ -33,7 +33,7 @@ export const ScheduleView: React.FC = () => {
     <div className="page">
       <header className="page__header">
         <div className="page__heading">
-          <p className="page__eyebrow">事務</p>
+          <p className="page__eyebrow">安排</p>
           <h1 className="page__title">
             {tab === "week" ? "一週的節奏" : "把事情放在對的位置"}
           </h1>

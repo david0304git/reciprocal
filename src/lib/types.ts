@@ -171,4 +171,4 @@ export interface StorageInfo {
   sizeBytes: number;
 }
 
-export type ViewKey = "today" | "habits" | "calendar" | "tasks" | "stats" | "settings";
+export type ViewKey = "today" | "calendar" | "tasks" | "settings";

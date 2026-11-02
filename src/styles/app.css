@@ -3842,3 +3842,330 @@ html[data-platform="windows"] .sidebar__drag {
 html[data-platform="windows"] .main__drag {
   height: 6px;
 }
+
+/* 主頁：大字時鐘 */
+.home {
+  max-width: none;
+  min-height: calc(100vh - 86px);
+  display: flex;
+  flex-direction: column;
+}
+
+.home__head {
+  padding-top: 4px;
+}
+
+.home__clock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 7vh;
+}
+
+.home__time {
+  display: flex;
+  align-items: baseline;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(104px, 18vw, 220px);
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.home__seconds {
+  margin-left: 0.18em;
+  font-family: var(--font-sans);
+  font-size: 0.16em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-tertiary);
+  transform: translateY(-0.2em);
+}
+
+.home__date {
+  margin: 26px 0 0;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+}
+
+.home__greeting {
+  margin: 9px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+/* 主頁下方：目前安排 + 當日明細 */
+.home__clock {
+  flex: none;
+  padding: 5vh 0 4vh;
+}
+
+.home__panels {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding-bottom: 8px;
+}
+
+.home-now {
+  position: relative;
+  padding: 18px 20px 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.home-now::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--now-color);
+  opacity: 0.85;
+}
+
+.home-now--current {
+  background: color-mix(in srgb, var(--now-color) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--now-color) 30%, var(--border));
+}
+
+.home-now__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.home-now__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--now-color);
+  flex: none;
+}
+
+.home-now--current .home-now__dot {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--now-color) 15%, transparent);
+}
+
+.home-now__kicker {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--text-tertiary);
+}
+
+.home-now__title {
+  margin: 12px 0 0;
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.home-now__meta {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 960px) {
+  .home__panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home__clock {
+    padding: 4vh 0 3vh;
+  }
+}
+
+/* 設定：日曆多選下拉 */
+.setting-row--calendar {
+  align-items: flex-start;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.setting-row--calendar .setting-row__text {
+  flex: 1;
+}
+
+.calendar-multi {
+  position: relative;
+  flex: none;
+  margin-left: auto;
+}
+
+.calendar-multi__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 190px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.calendar-multi__trigger:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.calendar-multi__trigger.is-open {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--text);
+}
+
+.calendar-multi__trigger:disabled {
+  opacity: 0.65;
+}
+
+.calendar-multi__summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-multi__chevron {
+  flex: none;
+  color: var(--text-tertiary);
+  transition: transform 140ms ease;
+}
+
+.calendar-multi__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.calendar-multi__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: 320px;
+  max-height: 360px;
+  overflow: hidden;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.calendar-multi__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 2px 8px;
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+.calendar-multi__actions {
+  display: flex;
+  gap: 5px;
+}
+
+.calendar-multi__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 270px;
+  overflow-y: auto;
+}
+
+.calendar-multi__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.calendar-multi__row:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.calendar-multi__row.is-on {
+  color: var(--text);
+}
+
+.calendar-multi__row input {
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.calendar-multi__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.calendar-multi__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-multi__meta {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.calendar-multi__note {
+  margin: 8px 2px 0;
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 720px) {
+  .setting-row--calendar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-multi {
+    margin-left: 0;
+  }
+
+  .calendar-multi__trigger {
+    width: 100%;
+  }
+
+  .calendar-multi__panel {
+    left: 0;
+    right: auto;
+    width: min(320px, 100%);
+  }
+}
+
+.day-detail--events .day-detail__grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}

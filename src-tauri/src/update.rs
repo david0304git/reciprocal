@@ -179,7 +179,7 @@ mod tests {
     #[test]
     #[ignore = "requires network and an existing GitHub release"]
     fn live_github_check() {
-        let result = check("0.1.2").expect("GitHub check failed");
+        let result = check("0.1.3").expect("GitHub check failed");
         eprintln!("{result:?}");
         assert!(!result.source.is_empty());
     }
