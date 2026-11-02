@@ -499,19 +499,8 @@ pub fn open_external(url: String) -> CmdResult<()> {
     if !url.starts_with("https://github.com/") {
         return Err("只允許開啟 GitHub 連結".into());
     }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .arg(&url)
-            .status()
-            .map_err(|error| format!("無法開啟連結：{error}"))?;
-        Ok(())
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        let _ = url;
-        Err("目前僅支援在 macOS 開啟連結".into())
-    }
+    open::that(&url).map_err(|error| format!("無法開啟連結：{error}"))?;
+    Ok(())
 }
 
 #[cfg(test)]

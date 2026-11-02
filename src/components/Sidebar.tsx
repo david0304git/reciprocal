@@ -99,7 +99,7 @@ export const Sidebar: React.FC = () => {
         <span className="nav__kbd">⌘,</span>
       </button>
 
-      <p className="sidebar__foot">本機資料 · v0.1.0</p>
+      <p className="sidebar__foot">本機資料 · v{__APP_VERSION__}</p>
     </aside>
   );
 };

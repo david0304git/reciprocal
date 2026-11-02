@@ -3,9 +3,11 @@
 ------------------------------------------------------------------- */
 
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC",
-    "Hiragino Sans", "Helvetica Neue", sans-serif;
-  --font-display: ui-serif, "New York", "Songti TC", "Noto Serif TC", Georgia, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    "PingFang TC", "Microsoft JhengHei", "Microsoft YaHei", "Hiragino Sans",
+    "Helvetica Neue", Arial, sans-serif;
+  --font-display: ui-serif, "New York", "Songti TC", "Noto Serif TC", "PMingLiU",
+    Georgia, "Times New Roman", serif;
 
   --bg: #f6f4ef;
   --bg-sunken: #efece5;
@@ -3829,4 +3831,14 @@ input[type="checkbox"] {
   .update-banner {
     margin: 0 22px 10px;
   }
+}
+
+
+/* Windows 使用系統原生的標題列，不需要 macOS 的交通燈留白 */
+html[data-platform="windows"] .sidebar__drag {
+  height: 10px;
+}
+
+html[data-platform="windows"] .main__drag {
+  height: 6px;
 }

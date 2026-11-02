@@ -584,13 +584,13 @@ export async function mockInvoke<T>(cmd: string, args?: Record<string, unknown>)
     case "check_for_updates": {
       const hasUpdate = localStorage.getItem("reciprocal.mockUpdate") === "1";
       return {
-        currentVersion: "0.1.0",
-        latestVersion: hasUpdate ? "0.2.0" : "0.1.0",
+        currentVersion: __APP_VERSION__,
+        latestVersion: hasUpdate ? "0.2.0" : __APP_VERSION__,
         updateAvailable: hasUpdate,
         releaseUrl: hasUpdate
           ? "https://github.com/david0304git/reciprocal/releases/tag/v0.2.0"
-          : "https://github.com/david0304git/reciprocal/releases/tag/v0.1.0",
-        releaseName: hasUpdate ? "v0.2.0" : "v0.1.0",
+          : `https://github.com/david0304git/reciprocal/releases/tag/v${__APP_VERSION__}`,
+        releaseName: hasUpdate ? "v0.2.0" : `v${__APP_VERSION__}`,
         publishedAt: nowIso(),
         source: "release",
       } as T;

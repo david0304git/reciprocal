@@ -90,7 +90,7 @@ export const SettingsView: React.FC = () => {
   const [importing, setImporting] = useState(false);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [currentVersion, setCurrentVersion] = useState("0.1.0");
+  const [currentVersion, setCurrentVersion] = useState(__APP_VERSION__);
   const [apple, setApple] = useState<AppleStatus | null>(null);
   const [appleBusy, setAppleBusy] = useState(false);
   const [calendars, setCalendars] = useState<AppleCalendarInfo[]>([]);
@@ -317,7 +317,7 @@ export const SettingsView: React.FC = () => {
         <div className="setting-row">
           <div className="setting-row__text">
             <p className="setting-row__title">主題</p>
-            <p className="setting-row__desc">「自動」會跟隨 macOS 的外觀設定。</p>
+            <p className="setting-row__desc">「自動」會跟隨系統的外觀設定。</p>
           </div>
           <Segmented
             value={settings.theme}
@@ -766,7 +766,7 @@ export const SettingsView: React.FC = () => {
         <div className="card__head">
           <div>
             <h2 className="card__title">關於</h2>
-            <p className="card__subtitle">Reciprocal 0.1.0</p>
+            <p className="card__subtitle">Reciprocal {__APP_VERSION__}</p>
           </div>
         </div>
         <div className="about">

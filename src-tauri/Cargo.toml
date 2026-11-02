@@ -1,6 +1,6 @@
 [package]
 name = "reciprocal"
-version = "0.1.0"
+version = "0.1.1"
 description = "Reciprocal — 個人習慣、日曆與事務追蹤"
 authors = ["lutszhong"]
 edition = "2021"
@@ -30,6 +30,7 @@ reqwest = { version = "0.12", default-features = false, features = [
     "rustls-tls",
 ] }
 semver = "1"
+open = "5"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"

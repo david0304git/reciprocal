@@ -9,6 +9,26 @@ Reciprocal 是一個為個人打造的桌面應用：建立習慣、每天打勾
 
 ![今日](docs/screenshots/today.png)
 
+## 平台與下載
+
+| 平台 | 需求 | 下載 |
+| --- | --- | --- |
+| **macOS** | macOS 10.15+（Apple 日曆同步需 macOS 14+） | `Reciprocal-<version>-macos-arm64.zip` |
+| **Windows** | Windows 10／11 x64，WebView2（Windows 11 內建；10 可能由安裝檔下載） | `Reciprocal_<version>_x64-setup.exe` |
+
+Windows 版與 macOS 版共用同一份 Rust／React 程式碼與 SQLite 格式；**Apple 日曆同步僅限 macOS**（EventKit），Windows 版其餘功能（習慣、日曆、週時間表、事務、統計、備份、更新檢查）完整可用。
+
+Windows 安裝檔未簽章，SmartScreen 可能提示：點「更多資訊 → 仍要執行」。資料庫位置為 `%APPDATA%\com.lutszhong.reciprocal\reciprocal.db`。
+
+從原始碼建置 Windows 版：
+
+```powershell
+npm ci
+npx tauri build --bundles nsis
+```
+
+產物在 `src-tauri/target/release/bundle/nsis/`。
+
 ## 功能
 
 | 頁面 | 內容 |
@@ -18,11 +38,11 @@ Reciprocal 是一個為個人打造的桌面應用：建立習慣、每天打勾
 | **日曆** | 月視圖、左側行程倒數（剩餘天／小時／分鐘）、當日細節（行程／固定安排／到期事務／習慣打卡）、可選 Apple 日曆分類與顏色 |
 | **事務** | **週時間表**（星期一至五 × 全天 00:00–24:00，24 小時制時間選擇，可捲動）＋待辦清單分頁（清單／看板、拖放、優先級、標籤、篩選） |
 | **統計** | 本月打卡、最長連續、近 30 天達成率、本月完成事務、30 天趨勢、8 週完成量、習慣一致性、自動觀察 |
-| **設定** | 主題（自動／淺色／深色）、一週起始日、資料庫位置與大小、JSON 匯出與還原、清除所有資料、**Apple 日曆整合（選用；可分別設定「要匯入的日曆」與「倒數卡片顯示的日曆」）** |
+| **設定** | 主題（自動／淺色／深色）、一週起始日、資料庫位置與大小、JSON 匯出與還原、清除所有資料、**Apple 日曆整合（選用，僅 macOS）**、更新檢查 |
 
-- 介面繁體中文，跟隨 macOS 系統淺色／深色外觀。
+- 介面繁體中文，跟隨系統淺色／深色外觀（macOS／Windows）。
 - 鍵盤快捷鍵：`⌘1` 今日、`⌘2` 習慣、`⌘3` 日曆、`⌘4` 事務、`⌘5` 統計、`⌘,` 設定。
-- 視窗採 macOS 原生 Overlay 標題列（紅綠燈融入側欄），可拖曳視窗頂部移動。
+- macOS 採原生 Overlay 標題列（紅綠燈融入側欄）；Windows 使用系統標題列。兩者都可拖曳視窗頂部移動。
 
 ### 畫面
 
@@ -46,7 +66,7 @@ Reciprocal 是一個為個人打造的桌面應用：建立習慣、每天打勾
 
 | 層 | 選擇 |
 | --- | --- |
-| 桌面框架 | **Tauri 2**（Rust 後端 + macOS WKWebView） |
+| 桌面框架 | **Tauri 2**（Rust 後端 + macOS WKWebView／Windows WebView2） |
 | 前端 | React 19 + TypeScript 6 + Vite 8 |
 | 樣式 | 手寫 CSS 設計系統（tokens、淺／深色主題、無 UI 框架） |
 | 圖示 | lucide-react |
@@ -180,14 +200,14 @@ npm run shots        # 46 checks（需要本機 Chrome）
 
 ## 已知限制
 
-- Apple 日曆整合需要 macOS 14+ 的完整日曆權限；未簽章（ad-hoc）的 `.app` 重新編譯後，macOS 可能重新詢問權限。
+- Apple 日曆整合僅限 macOS 14+，需要完整日曆權限；未簽章（ad-hoc）的 `.app` 重新編譯後，macOS 可能重新詢問權限。Windows 版沒有 Apple 日曆同步。
 - 「Reciprocal」專用日曆由 App 管理，在 Apple 日曆中直接修改該日曆的內容不一定會同步回 App。
 - 匯入的 Apple 行程是唯讀，App 內不能編輯或刪除；請回到 Apple 日曆修改。
 - Reciprocal 建立的行程若寫入你既有的 Apple 日曆（例如「工作」），在 Apple 日曆中修改它不會自動拉回 App；以 App 內的版本為準。
 - 「要匯入的日曆」取消勾選後會從 Reciprocal 完全移除；只想隱藏倒數卡片請用「倒數卡片顯示的日曆」，不影響月曆資料。
 - 週時間表顯示全天 00:00–24:00，內容區可上下捲動。
 - 這兩層過濾只影響 Reciprocal 的顯示與匯入，不會修改或刪除你的 Apple 日曆。
-- 沒有系統通知／提醒（macOS 通知需要額外權限與排程器）。
+- 沒有系統通知／提醒（需要額外權限與排程器）。
 - 行程目前是單日事件，沒有重複規則（每週、每年）；每週重複的固定安排請用「事務 → 週時間表」。
 - 固定安排只支援星期一至五（依目前需求），週末不顯示。
 - 同一時段可以建立多筆安排，重疊時會疊在一起，尚未有衝突提示。
