@@ -81,16 +81,6 @@ export const CalendarView: React.FC = () => {
     return map;
   }, [data?.events]);
 
-  const outstandingTasks = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const task of data?.tasks ?? []) {
-      if (task.status !== "done" && task.dueDate) {
-        map.set(task.dueDate, (map.get(task.dueDate) ?? 0) + 1);
-      }
-    }
-    return map;
-  }, [data?.tasks]);
-
   const cardCalendarFilter = useMemo(() => {
     const raw = data?.settings.appleCardCalendarIds;
     if (!raw) return null;
@@ -121,10 +111,6 @@ export const CalendarView: React.FC = () => {
   const monthEvents = (data?.events ?? []).filter((event) =>
     isSameMonth(new Date(`${event.date}T00:00:00`), month),
   );
-  const monthTasks = (data?.tasks ?? []).filter(
-    (task) => task.dueDate && isSameMonth(new Date(`${task.dueDate}T00:00:00`), month),
-  );
-
   const openNewEvent = (event: EventItem | null = null) => {
     setEditingEvent(event);
     setEventFormOpen(true);
@@ -137,7 +123,7 @@ export const CalendarView: React.FC = () => {
           <p className="page__eyebrow">日曆</p>
           <h1 className="page__title">{formatMonthTitle(month)}</h1>
           <p className="page__subtitle">
-            {monthEvents.length} 個行程 · {monthTasks.length} 項到期安排 · 左側顯示下一個行程的倒數
+            {monthEvents.length} 個行程 · 左側顯示下一個行程的倒數
           </p>
         </div>
         <div className="page__actions">
@@ -261,7 +247,6 @@ export const CalendarView: React.FC = () => {
               {grid.map((date) => {
                 const key = iso(date);
                 const events = eventsByDate.get(key) ?? [];
-                const taskCount = outstandingTasks.get(key) ?? 0;
                 const classes = [
                   "day",
                   !isSameMonth(date, month) ? "day--out" : "",
@@ -283,9 +268,6 @@ export const CalendarView: React.FC = () => {
                   >
                     <span className="day__top">
                       <span className="day__number">{date.getDate()}</span>
-                      {taskCount > 0 ? (
-                        <span className="day__task-dot" title={`${taskCount} 項到期安排`} />
-                      ) : null}
                     </span>
                     <span className="day__events">
                       {events.slice(0, 3).map((event) => (
@@ -309,9 +291,6 @@ export const CalendarView: React.FC = () => {
             <div className="calendar__legend">
               <span>
                 <i className="legend-dot legend-dot--event" /> 行程
-              </span>
-              <span>
-                <i className="legend-dot legend-dot--task" /> 到期安排
               </span>
               <span className="calendar__legend-tip">行程明細在主頁</span>
             </div>

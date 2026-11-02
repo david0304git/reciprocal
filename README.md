@@ -195,7 +195,7 @@ npm run build
 # 互動檢查（需要 dev server）：主頁時鐘、快速新增、看板拖曳、
 # modal 定位、主題切換與持久化
 npm run dev          # 另開一個終端
-npm run shots        # 68 checks（需要本機 Chrome）
+npm run shots        # 70 checks（需要本機 Chrome）
 ```
 
 實機驗證方式：以 `RECIPROCAL_DATA_DIR` 啟動建置後的 `.app`，確認 SQLite 建表與種子資料寫入，並從日誌確認 WebView 載入後成功呼叫 `load_app`（`ui ready: 3 habits, 8 logs, 3 tasks`）。

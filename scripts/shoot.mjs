@@ -214,6 +214,11 @@ await page.keyboard.press("Escape");
 await nav("日曆");
 await page.waitForTimeout(500);
 assert((await page.locator(".day-detail").count()) === 0, "日曆頁不再顯示下方明細卡");
+assert(
+  !(await page.locator(".calendar").innerText()).includes("到期安排"),
+  "日曆不顯示到期安排",
+);
+assert((await page.locator(".day__task-dot").count()) === 0, "日曆日期不顯示到期安排小點");
 assert((await page.locator(".countdown-card").count()) >= 1, "倒數卡片有行程");
 const countdownText = await page.locator(".countdown-list").innerText();
 assert(/後|今天|進行中/.test(countdownText), "倒數卡片顯示剩餘時間");

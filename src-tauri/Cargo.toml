@@ -1,6 +1,6 @@
 [package]
 name = "reciprocal"
-version = "0.1.4"
+version = "0.1.5"
 description = "Reciprocal — 個人習慣、日曆與事務追蹤"
 authors = ["lutszhong"]
 edition = "2021"
