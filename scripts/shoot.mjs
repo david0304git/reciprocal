@@ -44,6 +44,52 @@ await page.evaluate(() => localStorage.clear());
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForSelector(".habit-row");
 
+/* 讓「今日」測試不受星期影響：為今天補一筆固定安排（週末補一筆行程） */
+const todayWeekday = await page.evaluate(() => {
+  const raw = JSON.parse(localStorage.getItem("reciprocal.browser-preview.v1"));
+  const now = new Date();
+  const jsDay = now.getDay();
+  const day = jsDay >= 1 && jsDay <= 5 ? jsDay : 0;
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate(),
+  ).padStart(2, "0")}`;
+  if (day) {
+    raw.timetable.push({
+      id: 9001,
+      day,
+      startTime: "07:00",
+      endTime: "07:30",
+      title: "今天固定安排",
+      notes: "",
+      color: "#5B7DB1",
+      createdAt: now.toISOString(),
+    });
+  } else {
+    raw.events.push({
+      id: 9001,
+      title: "今天測試行程",
+      notes: "",
+      date,
+      startTime: "07:00",
+      endTime: "07:30",
+      allDay: false,
+      color: "#5B7DB1",
+      location: "",
+      category: "個人",
+      source: "local",
+      externalId: null,
+      externalCalendar: null,
+      externalCalendarId: null,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    });
+  }
+  localStorage.setItem("reciprocal.browser-preview.v1", JSON.stringify(raw));
+  return day;
+});
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForSelector(".habit-row");
+
 /* ---------------------------------------------------------------- today */
 const habitChecks = page.locator(".habit-row .check");
 await habitChecks.nth(0).click();
@@ -51,11 +97,13 @@ await habitChecks.nth(1).click();
 await page.waitForTimeout(400);
 assert((await page.locator(".habit-row--done").count()) === 2, "兩個習慣可打卡");
 assert((await page.locator(".today-card__ratio").innerText()).trim() === "2/3", "今日進度 2/3");
-assert((await page.locator(".timeline__row").count()) >= 2, "今日時間軸含固定安排");
-assert(
-  (await page.locator(".timeline").innerText()).includes("週計畫與信箱"),
-  "今日時間軸顯示週一固定安排",
-);
+assert((await page.locator(".timeline__row").count()) >= 1, "今日時間軸含今日安排");
+if (todayWeekday) {
+  assert(
+    (await page.locator(".timeline").innerText()).includes("今天固定安排"),
+    "今日時間軸顯示今天固定的安排",
+  );
+}
 await shot("today");
 
 /* ---------------------------------------------------------------- habits */
@@ -572,6 +620,28 @@ assert(
 await nav("設定");
 await page.getByRole("tab", { name: /淺色/ }).click();
 await page.waitForTimeout(350);
+
+/* Windows 平台快捷鍵提示 */
+const windowsContext = await browser.newContext({
+  viewport: { width: 1320, height: 860 },
+  userAgent:
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+});
+const windowsPage = await windowsContext.newPage();
+await windowsPage.goto(base, { waitUntil: "networkidle" });
+await windowsPage.locator(".nav__kbd").first().waitFor();
+const windowsPlatform = await windowsPage.evaluate(
+  () => document.documentElement.dataset.platform,
+);
+const windowsShortcuts = (await windowsPage.locator(".nav__kbd").allInnerTexts()).map(
+  (text) => text.replace(/\s+/g, ""),
+);
+assert(windowsPlatform === "windows", "Windows 平台樣式會啟用");
+assert(
+  windowsShortcuts[0] === "Ctrl+1" && windowsShortcuts[5] === "Ctrl+,",
+  "Windows 側欄顯示 Ctrl 快捷鍵",
+);
+await windowsContext.close();
 
 const failed = checks.filter((check) => !check.ok);
 console.log(`\n${checks.length - failed.length}/${checks.length} checks passed`);

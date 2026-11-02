@@ -12,11 +12,11 @@ const NAV_ITEMS: Array<{
   icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
   shortcut: string;
 }> = [
-  { key: "today", label: "今日", icon: Sun, shortcut: "⌘1" },
-  { key: "habits", label: "習慣", icon: Sprout, shortcut: "⌘2" },
-  { key: "calendar", label: "日曆", icon: CalendarDays, shortcut: "⌘3" },
-  { key: "tasks", label: "事務", icon: ListChecks, shortcut: "⌘4" },
-  { key: "stats", label: "統計", icon: ChartColumn, shortcut: "⌘5" },
+  { key: "today", label: "今日", icon: Sun, shortcut: "1" },
+  { key: "habits", label: "習慣", icon: Sprout, shortcut: "2" },
+  { key: "calendar", label: "日曆", icon: CalendarDays, shortcut: "3" },
+  { key: "tasks", label: "事務", icon: ListChecks, shortcut: "4" },
+  { key: "stats", label: "統計", icon: ChartColumn, shortcut: "5" },
 ];
 
 const BrandMark: React.FC = () => (
@@ -29,6 +29,8 @@ const BrandMark: React.FC = () => (
 
 export const Sidebar: React.FC = () => {
   const { data, view, setView, settings } = useApp();
+  const isMac = document.documentElement.dataset.platform !== "windows";
+  const shortcutPrefix = isMac ? "⌘" : "Ctrl+";
   const today = todayISO();
   const index = useMemo(() => buildLogIndex(data?.logs ?? []), [data?.logs]);
   const habits = (data?.habits ?? []).filter((habit) => !habit.archived);
@@ -63,7 +65,10 @@ export const Sidebar: React.FC = () => {
             >
               <Icon size={16} strokeWidth={1.9} />
               <span className="nav__label">{item.label}</span>
-              <span className="nav__kbd">{item.shortcut}</span>
+              <span className="nav__kbd">
+                {shortcutPrefix}
+                {item.shortcut}
+              </span>
             </button>
           );
         })}
@@ -96,7 +101,7 @@ export const Sidebar: React.FC = () => {
       >
         <SettingsIcon size={16} strokeWidth={1.9} />
         <span className="nav__label">設定</span>
-        <span className="nav__kbd">⌘,</span>
+        <span className="nav__kbd">{isMac ? "⌘," : "Ctrl+,"}</span>
       </button>
 
       <p className="sidebar__foot">本機資料 · v{__APP_VERSION__}</p>
