@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Reciprocal 需要讀取與寫入你的日曆，才能把行程同步到 Apple 日曆，並顯示其他日曆的事件。</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Reciprocal 需要存取你的日曆，才能顯示並同步行程。</string>
+</dict>
+</plist>
