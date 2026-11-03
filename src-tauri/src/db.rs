@@ -170,6 +170,23 @@ pub fn init(conn: &Connection) -> Result<()> {
         }
         conn.pragma_update(None, "user_version", 4)?;
     }
+    if version < 5 {
+        // v5 removes duplicated imported occurrences (same Apple identifier,
+        // date, start time and all-day flag) and prevents them from coming back.
+        conn.execute_batch(
+            "DELETE FROM events
+             WHERE source = 'apple' AND external_id IS NOT NULL
+               AND id NOT IN (
+                 SELECT MIN(id) FROM events
+                 WHERE source = 'apple' AND external_id IS NOT NULL
+                 GROUP BY external_id, date, IFNULL(start_time, ''), all_day
+               );
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_events_imported_key
+               ON events (external_id, date, IFNULL(start_time, ''), all_day)
+               WHERE source = 'apple' AND external_id IS NOT NULL;
+             PRAGMA user_version = 5;",
+        )?;
+    }
     seed(conn)?;
     Ok(())
 }
@@ -260,7 +277,7 @@ mod tests {
         let version: i64 = conn
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(version, 4);
+        assert_eq!(version, 5);
     }
 
     #[test]
@@ -307,7 +324,49 @@ mod tests {
         let version: i64 = conn
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(version, 4);
+        assert_eq!(version, 5);
+    }
+
+    #[test]
+    fn migration_v5_deduplicates_imported_events() {
+        let conn = open_in_memory().unwrap();
+        conn.execute_batch(
+            "DROP INDEX idx_events_imported_key; PRAGMA user_version = 4;",
+        )
+        .unwrap();
+        for _ in 0..2 {
+            conn.execute(
+                "INSERT INTO events
+                    (title, date, all_day, source, external_id, external_calendar, external_calendar_id)
+                 VALUES ('平安夜', '2026-12-24', 1, 'apple', 'DUP-1', '香港節日', 'CAL-HK')",
+                [],
+            )
+            .unwrap();
+        }
+
+        init(&conn).unwrap();
+
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM events WHERE source = 'apple' AND external_id = 'DUP-1'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 1, "migration keeps one imported occurrence");
+        let version: i64 = conn
+            .query_row("PRAGMA user_version", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, 5);
+        let index: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master
+                 WHERE type = 'index' AND name = 'idx_events_imported_key'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(index, 1, "unique import index is created");
     }
 
     #[test]

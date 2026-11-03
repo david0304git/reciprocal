@@ -234,6 +234,7 @@ pub fn fetch_events(
             include_calendar_ids.iter().map(String::as_str).collect();
         let filter_enabled = !include_calendar_ids.is_empty();
         let mut selected: Vec<Retained<EKCalendar>> = Vec::new();
+        let mut seen_calendars = std::collections::HashSet::new();
         for index in 0..calendars.count() {
             let calendar = unsafe { calendars.objectAtIndex(index) };
             let identifier = unsafe { calendar.calendarIdentifier() }.to_string();
@@ -243,6 +244,13 @@ pub fn fetch_events(
                 }
             }
             if filter_enabled && !allowed.contains(identifier.as_str()) {
+                continue;
+            }
+            // The same calendar can appear more than once in the EventKit store
+            // (for example when an account is cached twice). Passing duplicate
+            // calendar references to the predicate makes EventKit return the
+            // same event twice.
+            if !seen_calendars.insert(identifier) {
                 continue;
             }
             selected.push(calendar);

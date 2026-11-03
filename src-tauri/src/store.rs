@@ -461,36 +461,85 @@ pub struct ImportedEvent {
 
 /// Reconciles events imported from Apple Calendar (read-only in Reciprocal).
 /// Local events are never touched by this function.
+fn imported_event_key(
+    external_id: &str,
+    date: &str,
+    start_time: Option<&str>,
+    all_day: bool,
+) -> String {
+    format!(
+        "{external_id}|{date}|{}|{}",
+        start_time.unwrap_or(""),
+        i32::from(all_day)
+    )
+}
+
 pub fn apply_imported_events(conn: &Connection, items: &[ImportedEvent]) -> Res<(usize, usize, usize)> {
     use std::collections::{HashMap, HashSet};
 
     let mut statement = conn
-        .prepare("SELECT id, external_id FROM events WHERE source = 'apple' AND external_id IS NOT NULL")
+        .prepare(
+            "SELECT id, external_id, date, start_time, all_day
+             FROM events WHERE source = 'apple' AND external_id IS NOT NULL",
+        )
         .map_err(sql_err)?;
     let existing: Vec<(i64, String)> = statement
-        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+        .query_map([], |row| {
+            let external_id: String = row.get(1)?;
+            let date: String = row.get(2)?;
+            let start_time: Option<String> = row.get(3)?;
+            let all_day: i64 = row.get(4)?;
+            Ok((
+                row.get::<_, i64>(0)?,
+                imported_event_key(&external_id, &date, start_time.as_deref(), all_day != 0),
+            ))
+        })
         .map_err(sql_err)?
         .collect::<rusqlite::Result<_>>()
         .map_err(sql_err)?;
-    let existing_map: HashMap<String, i64> = existing
+    let mut existing_map: HashMap<String, i64> =
+        existing.iter().map(|(id, key)| (key.clone(), *id)).collect();
+
+    let incoming: HashSet<String> = items
         .iter()
-        .map(|(id, external_id)| (external_id.clone(), *id))
+        .filter(|item| !item.date.is_empty())
+        .map(|item| {
+            imported_event_key(
+                &item.external_id,
+                &item.date,
+                item.start_time.as_deref(),
+                item.all_day,
+            )
+        })
         .collect();
-    let incoming: HashSet<&str> = items.iter().map(|item| item.external_id.as_str()).collect();
 
     let mut inserted = 0usize;
     let mut updated = 0usize;
+    let mut seen: HashSet<String> = HashSet::new();
     for item in items {
         if item.date.is_empty() {
             continue;
         }
-        if existing_map.contains_key(&item.external_id) {
+        let key = imported_event_key(
+            &item.external_id,
+            &item.date,
+            item.start_time.as_deref(),
+            item.all_day,
+        );
+        // EventKit can return the same occurrence twice in one fetch. Treat the
+        // identifier+date+start time as the identity so the second copy does not
+        // create a duplicate row.
+        if !seen.insert(key.clone()) {
+            continue;
+        }
+
+        if let Some(id) = existing_map.get(&key) {
             conn.execute(
                 "UPDATE events SET title = ?1, notes = ?2, date = ?3, start_time = ?4,
                     end_time = ?5, all_day = ?6, location = ?7, category = ?8, color = ?9,
                     external_calendar = ?10, external_calendar_id = ?11,
                     updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
-                 WHERE source = 'apple' AND external_id = ?12",
+                 WHERE source = 'apple' AND id = ?12",
                 params![
                     item.title,
                     item.notes,
@@ -503,7 +552,7 @@ pub fn apply_imported_events(conn: &Connection, items: &[ImportedEvent]) -> Res<
                     item.color,
                     item.calendar_title,
                     item.calendar_id,
-                    item.external_id
+                    id
                 ],
             )
             .map_err(sql_err)?;
@@ -529,13 +578,14 @@ pub fn apply_imported_events(conn: &Connection, items: &[ImportedEvent]) -> Res<
                 ],
             )
             .map_err(sql_err)?;
+            existing_map.insert(key, conn.last_insert_rowid());
             inserted += 1;
         }
     }
 
     let mut removed = 0usize;
-    for (id, external_id) in existing {
-        if !incoming.contains(external_id.as_str()) {
+    for (id, key) in existing {
+        if !incoming.contains(&key) {
             conn.execute("DELETE FROM events WHERE id = ?1", params![id])
                 .map_err(sql_err)?;
             removed += 1;
@@ -1354,6 +1404,42 @@ mod tests {
             end_time: Some("10:00".to_string()),
             all_day: false,
         }
+    }
+
+    #[test]
+    fn duplicate_imported_occurrences_are_deduplicated() {
+        let conn = db::open_in_memory().unwrap();
+        let item = imported_item("DUP-1", "平安夜");
+        let (inserted, updated, removed) =
+            apply_imported_events(&conn, &[item.clone(), item.clone()]).unwrap();
+        assert_eq!((inserted, updated, removed), (1, 0, 0));
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM events WHERE source = 'apple' AND external_id = 'DUP-1'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn imported_recurring_occurrences_keep_distinct_dates() {
+        let conn = db::open_in_memory().unwrap();
+        let mut first = imported_item("SERIES-1", "會議");
+        first.date = "2026-12-24".to_string();
+        let mut second = imported_item("SERIES-1", "會議");
+        second.date = "2026-12-25".to_string();
+        let (inserted, _, _) = apply_imported_events(&conn, &[first, second]).unwrap();
+        assert_eq!(inserted, 2);
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM events WHERE source = 'apple' AND external_id = 'SERIES-1'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 2);
     }
 
     #[test]
