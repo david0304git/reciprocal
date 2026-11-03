@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, isSameMonth, startOfMonth } from "date-fns";
 import { ChevronLeft, ChevronRight, Clock, MapPin, Plus, Timer } from "lucide-react";
 import { useApp } from "../lib/store";
@@ -31,6 +31,11 @@ export const CalendarView: React.FC = () => {
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [dayDialogOpen, setDayDialogOpen] = useState(false);
+  const countdownRef = useRef<HTMLDivElement>(null);
+  const [countdownScrollable, setCountdownScrollable] = useState(false);
+  const [countdownThumb, setCountdownThumb] = useState<{ top: number; height: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -107,6 +112,41 @@ export const CalendarView: React.FC = () => {
       .sort((a, b) => eventStartMs(a) - eventStartMs(b));
   }, [data?.events, now, cardCalendarFilter]);
 
+  useEffect(() => {
+    const element = countdownRef.current;
+    if (!element) {
+      setCountdownScrollable(false);
+      return;
+    }
+    const update = () => {
+      const scrollable = element.scrollHeight > element.clientHeight + 1;
+      setCountdownScrollable(scrollable);
+      if (!scrollable) {
+        setCountdownThumb(null);
+        return;
+      }
+      const trackHeight = element.clientHeight;
+      const thumbHeight = Math.max(
+        24,
+        (element.clientHeight / element.scrollHeight) * trackHeight,
+      );
+      const maxScroll = element.scrollHeight - element.clientHeight;
+      const top =
+        maxScroll > 0
+          ? (element.scrollTop / maxScroll) * Math.max(0, trackHeight - thumbHeight)
+          : 0;
+      setCountdownThumb({ top, height: thumbHeight });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    element.addEventListener("scroll", update, { passive: true });
+    return () => {
+      observer.disconnect();
+      element.removeEventListener("scroll", update);
+    };
+  }, [upcomingEvents]);
+
   const grid = useMemo(() => monthGrid(month, settings.weekStart), [month, settings.weekStart]);
   const weekdayLabels = settings.weekStart === 1 ? WEEKDAY_LABELS_MON : WEEKDAY_LABELS_SUN;
 
@@ -120,7 +160,7 @@ export const CalendarView: React.FC = () => {
   };
 
   return (
-    <div className="page">
+    <div className="page page--calendar">
       <header className="page__header">
         <div className="page__heading">
           <p className="page__eyebrow">日曆</p>
@@ -196,8 +236,9 @@ export const CalendarView: React.FC = () => {
               }
             />
           ) : (
-            <div className="countdown-list">
-              {upcomingEvents.slice(0, 6).map((event) => {
+            <div className={`countdown-scroll ${countdownScrollable ? "is-scrollable" : ""}`}>
+            <div className="countdown-list" ref={countdownRef}>
+              {upcomingEvents.map((event) => {
                 const soon = eventStartMs(event) - now < 24 * 60 * 60 * 1000;
                 return (
                   <button
@@ -230,9 +271,18 @@ export const CalendarView: React.FC = () => {
                   </button>
                 );
               })}
-              {upcomingEvents.length > 6 ? (
-                <p className="countdown-more">還有 {upcomingEvents.length - 6} 個行程</p>
-              ) : null}
+            </div>
+            {countdownScrollable ? (
+              <span className="countdown-scrollbar" aria-hidden="true">
+                <span
+                  className="countdown-scrollbar__thumb"
+                  style={{
+                    height: countdownThumb?.height ?? 0,
+                    transform: `translateY(${countdownThumb?.top ?? 0}px)`,
+                  }}
+                />
+              </span>
+            ) : null}
             </div>
           )}
         </aside>

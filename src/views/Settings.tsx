@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  Check,
   Database,
   Download,
   HardDrive,
@@ -307,6 +308,57 @@ export const SettingsView: React.FC = () => {
           </span>
         </div>
       ) : null}
+
+      <section className="card">
+        <div className="card__head">
+          <div>
+            <h2 className="card__title">介面風格</h2>
+            <p className="card__subtitle">套用後立即切換；只影響介面，不會修改你的資料。</p>
+          </div>
+          <span className="badge">
+            目前：
+            {settings.uiStyle === "glass"
+              ? "液態玻璃"
+              : settings.uiStyle === "swiss"
+                ? "瑞士工具"
+                : "紙本手帳"}
+          </span>
+        </div>
+        <div className="style-switcher">
+          {(
+            [
+              { id: "paper", name: "紙本手帳", desc: "溫暖紙張、襯線時鐘、索引標籤" },
+              { id: "glass", name: "液態玻璃", desc: "半透明材質、浮動層、柔和高光" },
+              { id: "swiss", name: "瑞士工具", desc: "嚴格網格、黑白、單一信號色" },
+            ] as const
+          ).map((option) => {
+            const selected = settings.uiStyle === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                className={`style-option ${selected ? "is-on" : ""}`}
+                aria-pressed={selected}
+                onClick={() => void actions.setSetting("uiStyle", option.id)}
+              >
+                <span className={`style-preview style-preview--${option.id}`}>
+                  <span className="style-preview__time">03:01</span>
+                  <span className="style-preview__accent" />
+                </span>
+                <span className="style-option__body">
+                  <span className="style-option__name">{option.name}</span>
+                  <span className="style-option__desc">{option.desc}</span>
+                </span>
+                {selected ? (
+                  <span className="style-option__check">
+                    <Check size={11} strokeWidth={3} />
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="card">
         <div className="card__head">

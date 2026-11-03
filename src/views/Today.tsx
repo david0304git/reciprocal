@@ -88,12 +88,14 @@ export const TodayView: React.FC = () => {
       </header>
 
       <div className="home__clock">
-        <p className="home__time" aria-label={`現在時間 ${hours}:${minutes}`}>
-          {hours}:{minutes}
-          <span className="home__seconds">{seconds}</span>
-        </p>
-        <p className="home__date">{formatDate(now)}</p>
-        <p className="home__greeting">{greetingFor(now.getHours())}</p>
+        <div className="home__clock-card">
+          <p className="home__time" aria-label={`現在時間 ${hours}:${minutes}`}>
+            {hours}:{minutes}
+            <span className="home__seconds">{seconds}</span>
+          </p>
+          <p className="home__date">{formatDate(now)}</p>
+          <p className="home__greeting">{greetingFor(now.getHours())}</p>
+        </div>
       </div>
 
       <div className="home__panels">

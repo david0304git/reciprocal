@@ -29,9 +29,12 @@ export interface Toast {
   tone: "ok" | "error" | "info";
 }
 
+export type UiStyle = "paper" | "glass" | "swiss";
+
 export interface Settings {
   theme: ThemeMode;
   weekStart: 0 | 1;
+  uiStyle: UiStyle;
 }
 
 interface Actions {
@@ -307,11 +310,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const settings = useMemo<Settings>(() => {
     const theme = (data?.settings.theme as ThemeMode | undefined) ?? readStoredTheme();
+    const storedUi = data?.settings.uiStyle;
+    const uiStyle: UiStyle =
+      storedUi === "glass" || storedUi === "swiss" ? storedUi : "paper";
     return {
       theme: theme === "light" || theme === "dark" ? theme : "auto",
       weekStart: Number(data?.settings.weekStart ?? 1) === 0 ? 0 : 1,
+      uiStyle,
     };
-  }, [data?.settings.theme, data?.settings.weekStart]);
+  }, [data?.settings.theme, data?.settings.weekStart, data?.settings.uiStyle]);
 
   useEffect(() => {
     storageSet("reciprocal.theme", settings.theme);

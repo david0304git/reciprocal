@@ -70,6 +70,15 @@ const Shell: React.FC = () => {
   const View = VIEWS[view];
 
   useEffect(() => {
+    document.documentElement.dataset.uiStyle = settings.uiStyle;
+    try {
+      localStorage.setItem("reciprocal.uiStyle", settings.uiStyle);
+    } catch {
+      /* storage may be unavailable */
+    }
+  }, [settings.uiStyle]);
+
+  useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
       const resolved =

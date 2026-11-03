@@ -223,6 +223,24 @@ assert(
   (await page.locator(".calendar__legend .legend-dot--event").count()) === 0,
   "日曆圖例不顯示行程藍色圖示",
 );
+const calendarCardBox = await page.locator(".calendar").boundingBox();
+const countdownPanelBox = await page.locator(".countdown-panel").boundingBox();
+assert(
+  Boolean(
+    calendarCardBox &&
+      countdownPanelBox &&
+      Math.abs(
+        calendarCardBox.y +
+          calendarCardBox.height -
+          (countdownPanelBox.y + countdownPanelBox.height),
+      ) <= 1,
+  ),
+  "日曆與倒數面板底部等高",
+);
+assert(
+  Boolean(calendarCardBox && calendarCardBox.y + calendarCardBox.height >= 700),
+  "日曆填滿下方區域",
+);
 assert((await page.locator(".countdown-card").count()) >= 1, "倒數卡片有行程");
 const countdownText = await page.locator(".countdown-list").innerText();
 assert(/後|今天|進行中/.test(countdownText), "倒數卡片顯示剩餘時間");
@@ -316,6 +334,73 @@ assert(
 );
 await page.keyboard.press("Escape");
 await page.waitForTimeout(250);
+
+/* 倒數列表：大量卡片時只在卡片內滾動 */
+await page.evaluate(() => {
+  const raw = JSON.parse(localStorage.getItem("reciprocal.browser-preview.v1"));
+  raw.events = raw.events.filter((event) => event.id < 8000 || event.id >= 9000);
+  for (let offset = 1; offset <= 12; offset += 1) {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+      date.getDate(),
+    ).padStart(2, "0")}`;
+    raw.events.push({
+      id: 8000 + offset,
+      title: `測試行程 ${offset}`,
+      notes: "",
+      date: iso,
+      startTime: null,
+      endTime: null,
+      allDay: true,
+      color: "#5B7DB1",
+      location: "",
+      category: "個人",
+      source: "local",
+      externalId: null,
+      externalCalendar: null,
+      externalCalendarId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+  localStorage.setItem("reciprocal.browser-preview.v1", JSON.stringify(raw));
+});
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForTimeout(600);
+await nav("日曆");
+await page.waitForTimeout(500);
+assert((await page.locator(".countdown-card").count()) > 6, "倒數列表不再限制 6 張卡");
+const countdownMetrics = await page.evaluate(() => {
+  const list = document.querySelector(".countdown-list");
+  if (!list) return null;
+  return {
+    scrollHeight: list.scrollHeight,
+    clientHeight: list.clientHeight,
+    overflowY: getComputedStyle(list).overflowY,
+  };
+});
+assert(
+  Boolean(
+    countdownMetrics &&
+      countdownMetrics.scrollHeight > countdownMetrics.clientHeight + 20,
+  ),
+  "倒數列表可在卡片內滾動",
+);
+assert(countdownMetrics?.overflowY === "auto", "倒數列表使用內部滾動條");
+assert(
+  await page.locator(".countdown-scrollbar__thumb").isVisible(),
+  "倒數列表顯示可見滾動條",
+);
+await page.screenshot({ path: path.join(outDir, "calendar-scroll.png") });
+console.log("shot calendar-scroll");
+await page.evaluate(() => {
+  const raw = JSON.parse(localStorage.getItem("reciprocal.browser-preview.v1"));
+  raw.events = raw.events.filter((event) => event.id < 8000 || event.id >= 9000);
+  localStorage.setItem("reciprocal.browser-preview.v1", JSON.stringify(raw));
+});
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForTimeout(400);
 
 await nav("主頁");
 await page.waitForTimeout(400);
@@ -655,6 +740,39 @@ assert(
 await nav("設定");
 await page.getByRole("tab", { name: /淺色/ }).click();
 await page.waitForTimeout(350);
+
+/* 三種介面風格切換 */
+assert((await page.locator(".style-option").count()) === 3, "設定提供三種介面風格");
+await page
+  .locator('.card:has-text("介面風格")')
+  .screenshot({ path: path.join(outDir, "settings-styles.png") });
+console.log("shot settings-styles");
+await page.locator('.style-option', { hasText: "液態玻璃" }).click();
+await page.waitForTimeout(500);
+assert(
+  (await page.evaluate(() => document.documentElement.dataset.uiStyle)) === "glass",
+  "可切換到液態玻璃",
+);
+await nav("主頁");
+await page.waitForTimeout(500);
+await shot("home-glass");
+await nav("設定");
+await page.locator('.style-option', { hasText: "瑞士工具" }).click();
+await page.waitForTimeout(500);
+assert(
+  (await page.evaluate(() => document.documentElement.dataset.uiStyle)) === "swiss",
+  "可切換到瑞士工具",
+);
+await nav("主頁");
+await page.waitForTimeout(500);
+await shot("home-swiss");
+await nav("設定");
+await page.locator('.style-option', { hasText: "紙本手帳" }).click();
+await page.waitForTimeout(500);
+assert(
+  (await page.evaluate(() => document.documentElement.dataset.uiStyle)) === "paper",
+  "可切換回紙本手帳",
+);
 
 /* Windows 平台快捷鍵提示 */
 const windowsContext = await browser.newContext({
