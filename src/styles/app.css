@@ -4151,6 +4151,8 @@ html[data-platform="windows"] .main__drag {
   z-index: 40;
   width: 320px;
   max-height: 360px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   padding: 10px;
   border-radius: 12px;
@@ -4178,6 +4180,8 @@ html[data-platform="windows"] .main__drag {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-height: 0;
   max-height: 270px;
   overflow-y: auto;
 }
@@ -4485,6 +4489,7 @@ html[data-ui-style="glass"] {
   --radius-xs: 10px;
   --glass-bg: rgba(255, 255, 255, 0.26);
   --glass-bg-strong: rgba(255, 255, 255, 0.38);
+  --glass-popover: rgba(255, 255, 255, 0.66);
   --glass-control: rgba(255, 255, 255, 0.34);
   --glass-control-hover: rgba(255, 255, 255, 0.5);
   --glass-input: rgba(255, 255, 255, 0.3);
@@ -4513,6 +4518,7 @@ html[data-theme="dark"][data-ui-style="glass"] {
   --ring-track: rgba(255, 255, 255, 0.12);
   --glass-bg: rgba(31, 27, 47, 0.42);
   --glass-bg-strong: rgba(31, 27, 47, 0.56);
+  --glass-popover: rgba(31, 27, 47, 0.84);
   --glass-control: rgba(255, 255, 255, 0.1);
   --glass-control-hover: rgba(255, 255, 255, 0.16);
   --glass-input: rgba(255, 255, 255, 0.08);
@@ -4696,7 +4702,7 @@ html[data-ui-style="glass"] .input::placeholder {
 }
 
 html[data-ui-style="glass"] .calendar-multi__panel {
-  background: var(--glass-bg-strong);
+  background: var(--glass-popover);
   border-color: var(--glass-border);
   box-shadow: var(--glass-shadow);
   backdrop-filter: var(--glass-blur);
@@ -5138,4 +5144,14 @@ html[data-ui-style="glass"] .tt__head {
   background: var(--glass-bg-strong);
   backdrop-filter: blur(26px) saturate(1.7);
   -webkit-backdrop-filter: blur(26px) saturate(1.7);
+}
+
+/* macOS traffic lights: keep the floating glass rail clear of the titlebar buttons */
+html[data-platform="macos"][data-ui-style="glass"] .sidebar {
+  margin-top: 38px;
+  height: auto;
+}
+
+html[data-platform="macos"][data-ui-style="glass"] .sidebar__drag {
+  height: 8px;
 }

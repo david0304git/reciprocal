@@ -1,4 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import type { AppleCalendarInfo } from "../lib/types";
 
@@ -26,14 +33,64 @@ export const CalendarMultiSelect: React.FC<Props> = ({
   metaFor,
 }) => {
   const [open, setOpen] = useState(false);
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const updatePanelPosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const width = Math.min(320, window.innerWidth - 16);
+    const left = Math.max(
+      8,
+      Math.min(rect.right - width, window.innerWidth - width - 8),
+    );
+    const spaceBelow = window.innerHeight - rect.bottom - 12;
+    const spaceAbove = rect.top - 12;
+    const openAbove = spaceBelow < 220 && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(180, Math.min(360, openAbove ? spaceAbove : spaceBelow));
+    const top = openAbove
+      ? Math.max(8, rect.top - maxHeight - 6)
+      : rect.bottom + 6;
+    setPanelStyle({
+      position: "fixed",
+      top,
+      left,
+      right: "auto",
+      width,
+      maxHeight,
+      zIndex: 130,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPanelStyle(null);
+      return;
+    }
+    updatePanelPosition();
+    const onScroll = () => updatePanelPosition();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open, updatePanelPosition]);
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+      if (
+        rootRef.current?.contains(target) ||
+        panelRef.current?.contains(target)
+      ) {
+        return;
       }
+      setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
@@ -64,6 +121,7 @@ export const CalendarMultiSelect: React.FC<Props> = ({
   return (
     <div className="calendar-multi" ref={rootRef}>
       <button
+        ref={triggerRef}
         type="button"
         className={`calendar-multi__trigger ${open ? "is-open" : ""}`}
         aria-label={ariaLabel}
@@ -77,8 +135,15 @@ export const CalendarMultiSelect: React.FC<Props> = ({
         <ChevronDown size={14} className={`calendar-multi__chevron ${open ? "is-open" : ""}`} />
       </button>
 
-      {open && !loading && calendars.length > 0 ? (
-        <div className="calendar-multi__panel" role="group" aria-label={ariaLabel}>
+      {open && !loading && calendars.length > 0 && panelStyle
+        ? createPortal(
+        <div
+          ref={panelRef}
+          className="calendar-multi__panel"
+          style={panelStyle}
+          role="group"
+          aria-label={ariaLabel}
+        >
           <div className="calendar-multi__panel-head">
             <span>
               {selected.length} / {calendars.length} 已選
@@ -129,8 +194,10 @@ export const CalendarMultiSelect: React.FC<Props> = ({
           </div>
 
           {calendarBusyNote(disabled)}
-        </div>
-      ) : null}
+        </div>,
+        document.body,
+      )
+        : null}
     </div>
   );
 };

@@ -492,6 +492,22 @@ assert(
 );
 await page.screenshot({ path: path.join(outDir, "settings-dropdown.png") });
 console.log("shot settings-dropdown");
+const dropdownBox = await dropdownPanel.boundingBox();
+assert(
+  Boolean(dropdownBox && dropdownBox.y >= 0 && dropdownBox.y + dropdownBox.height <= 860),
+  "日曆下拉選單不被裁切",
+);
+const dropdownOnTop = await page.evaluate(
+  ({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return Boolean(element?.closest(".calendar-multi__panel"));
+  },
+  {
+    x: (dropdownBox?.x ?? 0) + 10,
+    y: (dropdownBox?.y ?? 0) + (dropdownBox?.height ?? 0) - 12,
+  },
+);
+assert(dropdownOnTop, "日曆下拉選單在最上層");
 
 await page.keyboard.press("Escape");
 await page.waitForTimeout(150);
@@ -755,6 +771,11 @@ assert(
 );
 await nav("主頁");
 await page.waitForTimeout(500);
+const glassSidebarBox = await page.locator(".sidebar").boundingBox();
+assert(
+  Boolean(glassSidebarBox && glassSidebarBox.y >= 48),
+  "macOS 玻璃側欄避開交通燈",
+);
 await shot("home-glass");
 await nav("設定");
 await page.locator('.style-option', { hasText: "瑞士工具" }).click();
