@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Clock, MapPin, Plus, Timer } from "lucide-re
 import { useApp } from "../lib/store";
 import type { EventItem } from "../lib/types";
 import {
+  formatFullWeekday,
   formatMonthTitle,
   formatShort,
   hexAlpha,
@@ -12,7 +13,7 @@ import {
   todayISO,
   WEEKDAY_LABELS_MON,
 } from "../lib/date";
-import { EmptyState } from "../components/ui";
+import { EmptyState, Modal } from "../components/ui";
 import { EventForm } from "../components/EventForm";
 
 const WEEKDAY_LABELS_SUN = ["日", "一", "二", "三", "四", "五", "六"];
@@ -29,6 +30,7 @@ export const CalendarView: React.FC = () => {
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [dayDialogOpen, setDayDialogOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -111,6 +113,7 @@ export const CalendarView: React.FC = () => {
   const monthEvents = (data?.events ?? []).filter((event) =>
     isSameMonth(new Date(`${event.date}T00:00:00`), month),
   );
+  const selectedEvents = eventsByDate.get(selectedDate) ?? [];
   const openNewEvent = (event: EventItem | null = null) => {
     setEditingEvent(event);
     setEventFormOpen(true);
@@ -262,6 +265,7 @@ export const CalendarView: React.FC = () => {
                     className={classes}
                     onClick={() => {
                       setSelectedDate(key);
+                      setDayDialogOpen(true);
                       if (!isSameMonth(date, month)) setMonth(startOfMonth(date));
                     }}
                     aria-label={`${formatShort(key)}，${events.length} 個行程`}
@@ -289,15 +293,85 @@ export const CalendarView: React.FC = () => {
               })}
             </div>
             <div className="calendar__legend">
-              <span>
-                <i className="legend-dot legend-dot--event" /> 行程
-              </span>
-              <span className="calendar__legend-tip">行程明細在主頁</span>
+              <span className="calendar__legend-tip">點選日期顯示與編輯行程</span>
             </div>
           </section>
 
         </div>
       </div>
+
+      <Modal
+        open={dayDialogOpen}
+        onClose={() => setDayDialogOpen(false)}
+        title={formatShort(selectedDate)}
+        subtitle={`${formatFullWeekday(selectedDate)} · ${selectedEvents.length} 個行程`}
+        width={560}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => setDayDialogOpen(false)}
+            >
+              關閉
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => {
+                setDayDialogOpen(false);
+                openNewEvent();
+              }}
+            >
+              <Plus size={14} /> 新增行程
+            </button>
+          </>
+        }
+      >
+        <div className="day-dialog">
+          {selectedEvents.length === 0 ? (
+            <p className="muted-inline">這天還沒有行程。</p>
+          ) : (
+            <ul className="event-list">
+              {selectedEvents.map((event) => (
+                <li key={event.id}>
+                  <button
+                    type="button"
+                    className="event-row"
+                    onClick={() => {
+                      setDayDialogOpen(false);
+                      openNewEvent(event);
+                    }}
+                  >
+                    <span className="event-row__bar" style={{ background: event.color }} />
+                    <span className="event-row__body">
+                      <span className="event-row__title" title={event.title}>
+                        {event.title}
+                      </span>
+                      <span className="event-row__meta">
+                        <Clock size={11} />
+                        {event.allDay
+                          ? "全天"
+                          : `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}`}
+                        {event.location ? (
+                          <>
+                            <MapPin size={11} /> {event.location}
+                          </>
+                        ) : null}
+                      </span>
+                    </span>
+                    <span className="chip chip--tiny">{event.category}</span>
+                    {event.source === "apple" ? (
+                      <span className="chip chip--tiny chip--apple">Apple</span>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="form-hint">點擊行程即可編輯或刪除；也可以新增行程。</p>
+        </div>
+      </Modal>
 
       <EventForm
         open={eventFormOpen}

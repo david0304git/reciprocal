@@ -219,6 +219,10 @@ assert(
   "日曆不顯示到期安排",
 );
 assert((await page.locator(".day__task-dot").count()) === 0, "日曆日期不顯示到期安排小點");
+assert(
+  (await page.locator(".calendar__legend .legend-dot--event").count()) === 0,
+  "日曆圖例不顯示行程藍色圖示",
+);
 assert((await page.locator(".countdown-card").count()) >= 1, "倒數卡片有行程");
 const countdownText = await page.locator(".countdown-list").innerText();
 assert(/後|今天|進行中/.test(countdownText), "倒數卡片顯示剩餘時間");
@@ -287,6 +291,31 @@ await page.evaluate(() => {
 });
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(500);
+
+/* 點擊日曆日期：列出當天行程，點行程可編輯 */
+const tomorrowLabel = await page.evaluate(() => {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  return `${date.getMonth() + 1} 月 ${date.getDate()} 日`;
+});
+await page.locator(`.day[aria-label^="${tomorrowLabel}"]`).first().click();
+await page.waitForTimeout(350);
+assert(await page.locator(".modal").isVisible(), "點擊日期開啟當天行程");
+assert(
+  (await page.locator(".modal").innerText()).includes("與朋友午餐"),
+  "當天行程對話框顯示行程",
+);
+await page.screenshot({ path: path.join(outDir, "calendar-day-dialog.png") });
+console.log("shot calendar-day-dialog");
+await page.locator('.modal .event-row:has-text("與朋友午餐")').click();
+await page.waitForTimeout(350);
+assert(await page.locator("#event-form").isVisible(), "點擊行程可編輯");
+assert(
+  (await page.locator("#event-form input.input").first().inputValue()) === "與朋友午餐",
+  "編輯表單帶入行程內容",
+);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(250);
 
 await nav("主頁");
 await page.waitForTimeout(400);
