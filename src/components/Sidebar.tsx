@@ -52,6 +52,8 @@ export const Sidebar: React.FC = () => {
               className={`nav__item ${view === item.key ? "nav__item--active" : ""}`}
               // Swiping up on 時間表 pulls the timetable sheet instead of navigating.
               onPointerDown={(event) => {
+                // Pull-up belongs to the phone; on the desktop the menu is click-only.
+                if (document.documentElement.dataset.platform !== "android") return;
                 if (item.key !== "tasks" || view !== "today") return;
                 swipe.current = { startY: event.clientY, swiped: false };
               }}
