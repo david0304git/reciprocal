@@ -18,10 +18,14 @@ const VIEWS: Record<ViewKey, React.ComponentType> = {
 };
 
 const BrandGlyph: React.FC<{ size: number }> = ({ size }) => (
-  <svg width={size} height={size} viewBox="0 0 30 30" aria-hidden="true">
-    <circle cx="11.5" cy="15" r="7.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
-    <circle cx="18.5" cy="15" r="7.6" fill="currentColor" opacity="0.16" />
-    <circle cx="18.5" cy="15" r="7.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <svg width={size} height={size} viewBox="0 0 108 108" aria-hidden="true">
+    {/* Hourglass — same mark as the app icon (see src-tauri/icons). */}
+    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="6">
+      <path d="M36 27H72" />
+      <path d="M36 81H72" />
+      <path d="M37.5 27V41L49 57L37.5 73V81" />
+      <path d="M70.5 27V41L59 57L70.5 73V81" />
+    </g>
   </svg>
 );
 
