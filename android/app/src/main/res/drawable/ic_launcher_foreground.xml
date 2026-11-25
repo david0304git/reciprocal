@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Launcher foreground: the hourglass mark (chosen design M2 — thin brand-green line art on the
-  paper background).
+  Launcher foreground: the hourglass mark (design M2 — thin brand-green line art on the paper tile).
 
   Traced from the supplied reference: long rounded top/bottom bars, straight shoulders, diagonals
-  that meet at a narrow waist with a small gap. Drawn on the 108dp adaptive-icon canvas; the mark
-  spans x 36–72 and y 27–81, i.e. inside the 66dp safe circle, so no launcher mask clips it.
-  Line width 3.1dp (3.1% of the tile) keeps the thin-line look while staying readable at 48dp.
+  that meet at a narrow waist with a small gap. Base geometry is drawn on the 108dp adaptive-icon
+  grid (mark x 36–72, y 27–81) and then scaled 0.78 around the tile centre, because a full-height
+  glyph reads as "too big" inside a launcher mask — the mark now spans ~42dp of the 108dp canvas.
+  Line width 3.1dp (before scaling) keeps the thin-line look at 48dp.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -14,33 +14,40 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- top bar -->
-    <path
-        android:pathData="M36,27 L72,27"
-        android:strokeColor="#27614F"
-        android:strokeWidth="3.1"
-        android:strokeLineCap="round" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.78"
+        android:scaleY="0.78">
 
-    <!-- bottom bar -->
-    <path
-        android:pathData="M36,81 L72,81"
-        android:strokeColor="#27614F"
-        android:strokeWidth="3.1"
-        android:strokeLineCap="round" />
+        <!-- top bar -->
+        <path
+            android:pathData="M36,27 L72,27"
+            android:strokeColor="#27614F"
+            android:strokeWidth="3.1"
+            android:strokeLineCap="round" />
 
-    <!-- left half of the glass -->
-    <path
-        android:pathData="M37.5,27 L37.5,41 L50.8,57 L37.5,73 L37.5,81"
-        android:strokeColor="#27614F"
-        android:strokeWidth="3.1"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+        <!-- bottom bar -->
+        <path
+            android:pathData="M36,81 L72,81"
+            android:strokeColor="#27614F"
+            android:strokeWidth="3.1"
+            android:strokeLineCap="round" />
 
-    <!-- right half of the glass -->
-    <path
-        android:pathData="M70.5,27 L70.5,41 L57.2,57 L70.5,73 L70.5,81"
-        android:strokeColor="#27614F"
-        android:strokeWidth="3.1"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+        <!-- left half of the glass -->
+        <path
+            android:pathData="M37.5,27 L37.5,41 L50.8,57 L37.5,73 L37.5,81"
+            android:strokeColor="#27614F"
+            android:strokeWidth="3.1"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+
+        <!-- right half of the glass -->
+        <path
+            android:pathData="M70.5,27 L70.5,41 L57.2,57 L70.5,73 L70.5,81"
+            android:strokeColor="#27614F"
+            android:strokeWidth="3.1"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
 </vector>
