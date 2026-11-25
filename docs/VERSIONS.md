@@ -22,7 +22,8 @@
 ### 0.1.8 詳細差異
 
 - **圖標**：兩平台都是線稿沙漏（紙色 `#F4F1E9`、品牌綠 `#27614F`）。桌面 mark 佔 tile **58%**；
-  Android adaptive icon 幾何再乘 **0.78**（高度 ≈42dp，依使用者回饋縮小）。母檔：`scripts/make-desktop-icons.mjs`。
+  Android adaptive icon 幾何再乘 **0.78**（高度 ≈42dp，依使用者回饋縮小）。
+  桌面點陣圖標由 `scripts/make-desktop-icons.mjs` 產生；Android 圖標是向量 drawable，直接改 XML。
 - **共用前端**：桌面版改用與 Android 版相同的前端（`src/`），因此以下全部在桌面也生效：
   主頁行程清單（7／14／30 天、名稱＋倒數、自動縮小標題、兩行換行、長按拖曳排序並持久化）、
   「安排」→「時間表」、導航上方 peek 列＋上拉面板（只有主頁）、四頁左至右軌道＋鏡頭平移、
@@ -65,10 +66,31 @@ diff -rq src android/web/src        # 必須無輸出
 | `android/web/src/styles/android.css` | Android 專屬樣式（由 `main.tsx` 匯入，桌面不載入） |
 | `android/web/src/main.tsx` | 平台判斷含 `Android`（桌面維持 `macos`／`windows`） |
 
+## 後端對等檢查
+
+```bash
+python3 android/scripts/verify-parity.py     # exit 0 = 一致
+```
+
+比對 Rust `db.rs` 的 schema SQL 與 Kotlin `ReciprocalDb.kt`、`models.rs` 與 `Models.kt` 的欄位、
+以及前端呼叫的 28 個指令是否都有 Kotlin 實作。種子資料是**刻意分歧**（Android 不塞示範資料）。
+
 ## 版本號要同步的檔案
 
 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml`、`src-tauri/Cargo.lock`、
 `android/app/build.gradle.kts`（`versionName` ＋ `versionCode`，目前 0.1.8／2）。
+
+## 檔案整理原則（避免重複與殘留）
+
+| 類別 | 處置 |
+| --- | --- |
+| `src-tauri/target/`（Rust 建置快取，1.2 GB） | 不進 git；`target/release/bundle/` 的 `.app`／`.dmg` 每次用完即刪，要檔案再 `npm run tauri build` |
+| `android/app/build/`、`android/build/`、`android/web/dist/` | 建置產物，不進 git，可隨時刪 |
+| `android/web/`（前端副本） | **保留**：Android 版的獨立前端來源（與 `src/` 同步，見上節） |
+| `android/app/src/main/assets/web/` | **保留**：已建置的前端打包，讓 Android Studio／Gradle 不必先跑 Node |
+| `src-tauri/icons/{android,ios}/` | **已刪除**：那是 Tauri mobile init 的殘留，Android 版用 `android/app/src/main/res` 的向量圖標 |
+| icon 探索腳本（`make-icon-concepts*.mjs`） | **已刪除**：只保留產生正式圖標的 `make-desktop-icons.mjs` |
+| 上游原始碼對照 `reference/upstream/` | **已刪除**：repo 本身就是上游；`verify-parity.py` 直接讀 `../src-tauri/src/` |
 
 ## 發佈檢查表
 

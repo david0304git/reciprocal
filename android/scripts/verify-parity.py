@@ -127,7 +127,7 @@ def main() -> int:
     if kotlin_demo:
         ok = False
         print(f"FAIL  seed: Android must not ship demo rows ({len(kotlin_demo)} inserts found)")
-    elif kotlin_seed != ["INSERT INTO settings (key, value) VALUES ('onboarded', '1')"]:
+    elif kotlin_seed != [squash("INSERT INTO settings (key, value) VALUES ('onboarded', '1')")]:
         ok = False
         print(f"FAIL  seed: unexpected Android seed statements: {kotlin_seed}")
     else:
