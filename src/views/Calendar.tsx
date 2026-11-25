@@ -2,6 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, isSameMonth, startOfMonth } from "date-fns";
 import { ChevronLeft, ChevronRight, Clock, MapPin, Plus, Timer } from "lucide-react";
 import { useApp } from "../lib/store";
+import {
+  countdownLabel,
+  eventEndMs,
+  eventStartMs,
+  isInCardCalendarFilter,
+  readCardCalendarFilter,
+} from "../lib/nextUp";
 import type { EventItem } from "../lib/types";
 import {
   formatFullWeekday,
@@ -17,13 +24,11 @@ import { EmptyState, Modal } from "../components/ui";
 import { EventForm } from "../components/EventForm";
 
 const WEEKDAY_LABELS_SUN = ["日", "一", "二", "三", "四", "五", "六"];
-const startOfDay = (isoDate: string): number => {
-  const [year, month, day] = isoDate.split("-").map(Number);
-  return new Date(year, month - 1, day).getTime();
-};
 
 export const CalendarView: React.FC = () => {
   const { data, settings } = useApp();
+  // main.tsx (or the Android bridge shim) sets data-platform before React renders.
+  const isAndroid = document.documentElement.dataset.platform === "android";
   const today = todayISO();
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState(today);
@@ -43,35 +48,6 @@ export const CalendarView: React.FC = () => {
   }, []);
 
 
-  const eventStartMs = (event: EventItem): number => {
-    const time = event.allDay || !event.startTime ? "00:00" : event.startTime;
-    return new Date(`${event.date}T${time}`).getTime();
-  };
-
-  const eventEndMs = (event: EventItem): number => {
-    if (event.allDay || !event.startTime) return new Date(`${event.date}T23:59`).getTime();
-    const end = event.endTime || event.startTime;
-    const endMs = new Date(`${event.date}T${end}`).getTime();
-    return endMs === eventStartMs(event) ? endMs + 60 * 60 * 1000 : endMs;
-  };
-
-  const countdownLabel = (event: EventItem): string => {
-    if (event.allDay) {
-      const days = Math.round((startOfDay(event.date) - startOfDay(today)) / 86_400_000);
-      if (days <= 0) return "今天";
-      if (days === 1) return "明天";
-      return `${days} 天後`;
-    }
-    const diff = eventStartMs(event) - now;
-    if (diff <= 0) return "進行中";
-    const minutes = Math.floor(diff / 60_000);
-    if (minutes < 60) return `${minutes} 分鐘後`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} 小時 ${minutes % 60} 分後`;
-    const days = Math.floor(hours / 24);
-    return `${days} 天 ${hours % 24} 小時後`;
-  };
-
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventItem[]>();
     for (const event of data?.events ?? []) {
@@ -88,26 +64,14 @@ export const CalendarView: React.FC = () => {
     return map;
   }, [data?.events]);
 
-  const cardCalendarFilter = useMemo(() => {
-    const raw = data?.settings.appleCardCalendarIds;
-    if (!raw) return null;
-    try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? (parsed as string[]) : null;
-    } catch {
-      return null;
-    }
-  }, [data?.settings.appleCardCalendarIds]);
+  const cardCalendarFilter = useMemo(
+    () => readCardCalendarFilter(data?.settings),
+    [data?.settings],
+  );
 
   const upcomingEvents = useMemo(() => {
     return (data?.events ?? [])
-      .filter(
-        (event) =>
-          event.source !== "apple" ||
-          cardCalendarFilter === null ||
-          !event.externalCalendarId ||
-          cardCalendarFilter.includes(event.externalCalendarId),
-      )
+      .filter((event) => isInCardCalendarFilter(event, cardCalendarFilter))
       .filter((event) => eventEndMs(event) >= now)
       .sort((a, b) => eventStartMs(a) - eventStartMs(b));
   }, [data?.events, now, cardCalendarFilter]);
@@ -166,7 +130,7 @@ export const CalendarView: React.FC = () => {
           <p className="page__eyebrow">日曆</p>
           <h1 className="page__title">{formatMonthTitle(month)}</h1>
           <p className="page__subtitle">
-            {monthEvents.length} 個行程 · 左側顯示下一個行程的倒數
+            {monthEvents.length} 個行程 · {isAndroid ? "下方" : "左側"}顯示下一個行程的倒數
           </p>
         </div>
         <div className="page__actions">
@@ -256,7 +220,7 @@ export const CalendarView: React.FC = () => {
                       <span className="chip chip--tiny">{event.category}</span>
                     </span>
                     <span className="countdown-card__title">{event.title}</span>
-                    <span className="countdown-card__value">{countdownLabel(event)}</span>
+                    <span className="countdown-card__value">{countdownLabel(event, now)}</span>
                     <span className="countdown-card__meta">
                       {event.location ? (
                         <>

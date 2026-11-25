@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { X } from "lucide-react";
 import { AppProvider, useApp } from "./lib/store";
 import { Sidebar } from "./components/Sidebar";
+import { TimetablePeek } from "./components/TimetablePeek";
 import { ToastStack } from "./components/ui";
 import { TodayView } from "./views/Today";
 import { CalendarView } from "./views/Calendar";
@@ -9,6 +10,9 @@ import { ScheduleView } from "./views/Schedule";
 import { SettingsView } from "./views/Settings";
 import type { ViewKey } from "./lib/types";
 import { api } from "./lib/api";
+
+/** The four pages are laid out left → right; switching animates in that direction. */
+const VIEW_ORDER: ViewKey[] = ["today", "calendar", "tasks", "settings"];
 
 const VIEWS: Record<ViewKey, React.ComponentType> = {
   today: TodayView,
@@ -67,7 +71,7 @@ const UpdateBanner: React.FC = () => {
 
 const Shell: React.FC = () => {
   const { loading, error, data, reload, view, setView, settings } = useApp();
-  const View = VIEWS[view];
+  const activeIndex = Math.max(0, VIEW_ORDER.indexOf(view));
 
   useEffect(() => {
     document.documentElement.dataset.uiStyle = settings.uiStyle;
@@ -79,16 +83,41 @@ const Shell: React.FC = () => {
   }, [settings.uiStyle]);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    // On Android the WebView always reports `prefers-color-scheme: light` (the platform theme is a
+    // Light theme), so the native shell passes the real system night mode instead — otherwise
+    // "auto" would never follow the phone's dark mode.
+    const systemPrefersDark = (): boolean => {
+      if (document.documentElement.dataset.platform === "android") {
+        return window.__reciprocalSystemDark?.() === true;
+      }
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    };
     const apply = () => {
       const resolved =
-        settings.theme === "auto" ? (media.matches ? "dark" : "light") : settings.theme;
+        settings.theme === "auto" ? (systemPrefersDark() ? "dark" : "light") : settings.theme;
       document.documentElement.dataset.theme = resolved;
     };
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
     apply();
     media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
+    window.addEventListener("reciprocal:system-theme", apply);
+    return () => {
+      media.removeEventListener("change", apply);
+      window.removeEventListener("reciprocal:system-theme", apply);
+    };
   }, [settings.theme]);
+
+  // Android back button: the native side dispatches "reciprocal:back"; navigate home and mark the
+  // event as handled so the OS does not close the app while a sub-view is open.
+  useEffect(() => {
+    const onBack = (event: Event) => {
+      if (view === "today") return;
+      event.preventDefault();
+      setView("today");
+    };
+    window.addEventListener("reciprocal:back", onBack);
+    return () => window.removeEventListener("reciprocal:back", onBack);
+  }, [view, setView]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -129,9 +158,32 @@ const Shell: React.FC = () => {
       <main className="main">
         <div className="main__drag" data-tauri-drag-region />
         <UpdateBanner />
-        <div className="main__scroll">
-          <View key={view} />
+        {/* The four pages are one long sheet: switching moves the camera, the sheet never changes. */}
+        <div className="view-viewport">
+          <div
+            className="view-track"
+            style={{ transform: `translateX(${-activeIndex * (100 / VIEW_ORDER.length)}%)` }}
+          >
+            {VIEW_ORDER.map((key) => {
+              const Panel = VIEWS[key];
+              const active = key === view;
+              return (
+                <section
+                  key={key}
+                  className="view-panel main__scroll"
+                  data-active={active}
+                  aria-hidden={!active}
+                  inert={!active}
+                >
+                  <Panel />
+                </section>
+              );
+            })}
+          </div>
         </div>
+        {/* The weekly rhythm lives in a pull-up panel that only the home page shows (it collapses
+            to zero height elsewhere so the camera move has no layout jump). */}
+        <TimetablePeek active={view === "today"} />
       </main>
       <ToastStack />
     </div>

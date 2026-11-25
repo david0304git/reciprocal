@@ -545,8 +545,8 @@ export async function mockInvoke<T>(cmd: string, args?: Record<string, unknown>)
 
     case "save_timetable": {
       const input = payload.block as TimetableBlock;
-      if (!input.title?.trim()) throw "安排標題不能留空";
-      if (![1, 2, 3, 4, 5].includes(Number(input.day))) throw "固定安排只支援星期一至星期五";
+      if (!input.title?.trim()) throw "時段標題不能留空";
+      if (![1, 2, 3, 4, 5].includes(Number(input.day))) throw "時段只支援星期一至星期五";
       if (!input.startTime || !input.endTime) throw "請填寫開始與結束時間";
       if (input.endTime <= input.startTime) throw "結束時間必須晚於開始時間";
       const block: TimetableBlock = {

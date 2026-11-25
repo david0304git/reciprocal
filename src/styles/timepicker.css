@@ -1,0 +1,485 @@
+/* ==================================================================
+   Time picker + event category chips
+   ------------------------------------------------------------------
+   These replace the native <select> dropdowns (which render with the
+   Android spinner style) and the fixed category row inside the event /
+   timetable forms. Colours come from the design tokens, so all three
+   interface styles follow automatically.
+================================================================== */
+
+/* ------------------------------------------------------------ time field */
+
+.time-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* the legacy rules centred the old <select> pair */
+  gap: 6px;
+  min-width: 0;
+}
+
+.time-field__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.time-field__trigger:hover {
+  border-color: var(--border-strong);
+}
+
+.time-field.is-open .time-field__trigger {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--accent-soft);
+}
+
+.time-field__value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.time-field__colon {
+  opacity: 0.4;
+}
+
+.time-field__caret {
+  flex: none;
+  color: var(--text-tertiary);
+  transition: transform 160ms ease, color 160ms ease;
+}
+
+.time-field.is-open .time-field__caret {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.time-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-sm);
+  animation: time-picker-in 160ms cubic-bezier(0.22, 0.75, 0.3, 1) both;
+}
+
+@keyframes time-picker-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.time-picker__head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.time-picker__cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.time-picker__col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 152px;
+  padding: 2px;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  border-radius: calc(var(--radius-sm) - 3px);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: var(--surface);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.time-picker__col::-webkit-scrollbar {
+  display: none;
+}
+
+.time-picker__item {
+  flex: none;
+  height: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  scroll-snap-align: center;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.time-picker__item:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.time-picker__item.is-active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+}
+
+.time-picker__foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* -------------------------------------------------—— category chips */
+
+.category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: stretch;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.category-chip.is-active {
+  border-color: transparent;
+  background: var(--accent-soft);
+}
+
+.category-chip__main {
+  height: 32px;
+  padding: 0 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.category-chip.is-active .category-chip__main {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.category-chip__remove {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  color: var(--text-tertiary);
+  border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.category-chip__remove:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.category-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.category-add .input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+}
+
+.category-add__hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------ swiss style */
+
+html[data-ui-style="swiss"] .time-field__trigger,
+html[data-ui-style="swiss"] .time-picker,
+html[data-ui-style="swiss"] .time-picker__col,
+html[data-ui-style="swiss"] .time-picker__item,
+html[data-ui-style="swiss"] .category-chip {
+  border-radius: 0;
+}
+
+html[data-ui-style="swiss"] .time-picker {
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-ui-style="swiss"] .time-picker__item.is-active {
+  background: var(--text);
+  color: var(--bg);
+}
+
+html[data-ui-style="swiss"] .category-chip.is-active {
+  border-color: var(--text);
+  background: transparent;
+}
+
+html[data-ui-style="swiss"] .category-chip.is-active .category-chip__main {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------ android sizing */
+
+html[data-platform="android"] .time-field__trigger {
+  height: 42px;
+  font-size: 15px;
+}
+
+html[data-platform="android"] .time-picker__item {
+  height: 40px;
+  min-height: 40px;
+  font-size: 15px;
+}
+
+html[data-platform="android"] .time-picker__col {
+  height: min(38dvh, 200px);
+}
+
+html[data-platform="android"] .category-chip__main {
+  height: 36px;
+  font-size: 13px;
+}
+
+html[data-platform="android"] .category-chip__remove {
+  width: 30px;
+}
+
+/* ==================================================================
+   Date picker (replaces <input type="date"> so it never falls back to
+   the platform calendar dialog)
+================================================================== */
+
+.date-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+}
+
+.date-field__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.date-field__trigger:hover {
+  border-color: var(--border-strong);
+}
+
+.date-field.is-open .date-field__trigger {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--accent-soft);
+}
+
+.date-field__value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.date-field__weekday {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+.date-field__placeholder {
+  color: var(--text-tertiary);
+}
+
+.date-field__caret {
+  flex: none;
+  color: var(--text-tertiary);
+  transition: transform 160ms ease, color 160ms ease;
+}
+
+.date-field.is-open .date-field__caret {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 240px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-sm);
+  animation: time-picker-in 160ms cubic-bezier(0.22, 0.75, 0.3, 1) both;
+}
+
+.date-picker__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.date-picker__nav {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.date-picker__nav:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.date-picker__title {
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.date-picker__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.date-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.date-picker__day {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-height: 30px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.date-picker__day:hover {
+  background: var(--surface-hover);
+}
+
+.date-picker__day.is-outside {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+
+.date-picker__day.is-today {
+  color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.date-picker__day.is-selected {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.date-picker__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.date-picker__spacer {
+  flex: 1;
+}
+
+/* swiss */
+html[data-ui-style="swiss"] .date-field__trigger,
+html[data-ui-style="swiss"] .date-picker,
+html[data-ui-style="swiss"] .date-picker__nav,
+html[data-ui-style="swiss"] .date-picker__day {
+  border-radius: 0;
+}
+
+html[data-ui-style="swiss"] .date-picker {
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-ui-style="swiss"] .date-picker__day.is-selected {
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* android */
+html[data-platform="android"] .date-field__trigger {
+  height: 42px;
+  font-size: 14px;
+}
+
+html[data-platform="android"] .date-picker__day {
+  min-height: 34px;
+  font-size: 13px;
+}
+
+html[data-platform="android"] .date-picker__nav {
+  width: 34px;
+  height: 34px;
+}

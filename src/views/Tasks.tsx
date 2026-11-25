@@ -153,7 +153,7 @@ export const TasksPanel: React.FC = () => {
     const created = await actions.saveTask({ title: quickTitle, status: "todo" });
     if (created) {
       setQuickTitle("");
-      notify("已新增安排", "ok");
+      notify("已新增待辦", "ok");
     }
   };
 
@@ -172,7 +172,7 @@ export const TasksPanel: React.FC = () => {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="搜尋標題、備註或標籤…"
-            aria-label="搜尋安排"
+            aria-label="搜尋待辦"
           />
         </div>
         <Segmented
@@ -222,7 +222,7 @@ export const TasksPanel: React.FC = () => {
           ]}
         />
         <button type="button" className="btn btn--primary btn--sm" onClick={() => openNew()}>
-          <Plus size={14} /> 新增安排
+          <Plus size={14} /> 新增待辦
         </button>
       </div>
 
@@ -231,8 +231,8 @@ export const TasksPanel: React.FC = () => {
         <input
           value={quickTitle}
           onChange={(event) => setQuickTitle(event.target.value)}
-          placeholder="快速新增安排，按 Enter 儲存…"
-          aria-label="快速新增安排"
+          placeholder="快速新增待辦，按 Enter 儲存…"
+          aria-label="快速新增待辦"
         />
         {quickTitle.trim() ? (
           <button type="submit" className="mini-btn mini-btn--accent">
@@ -244,18 +244,18 @@ export const TasksPanel: React.FC = () => {
       {allTasks.length === 0 ? (
         <EmptyState
           icon={<List size={22} />}
-          title="還沒有任何安排"
+          title="還沒有任何待辦"
           text="把腦中的待辦倒出來，再決定今天只需要完成哪一件。"
           action={
             <button type="button" className="btn btn--primary" onClick={() => openNew()}>
-              <Plus size={15} /> 新增第一項安排
+              <Plus size={15} /> 新增第一項待辦
             </button>
           }
         />
       ) : mode === "list" ? (
         <div className="task-groups">
           {groups.every((group) => group.tasks.length === 0) ? (
-            <p className="muted-inline">沒有符合條件的安排。</p>
+            <p className="muted-inline">沒有符合條件的待辦。</p>
           ) : (
             groups.map((group) =>
               group.tasks.length === 0 ? null : (
@@ -358,7 +358,7 @@ export const TasksPanel: React.FC = () => {
 
       <ConfirmDialog
         open={Boolean(confirmDelete)}
-        title="刪除這項安排？"
+        title="刪除這項待辦？"
         message={`「${confirmDelete?.title ?? ""}」將被永久刪除。`}
         onClose={() => setConfirmDelete(null)}
         onConfirm={async () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Clock, Plus } from "lucide-react";
 import { useApp } from "../lib/store";
 import type { TimetableBlock } from "../lib/types";
@@ -26,17 +26,29 @@ const hourLabel = (hour: number): string => `${String(hour).padStart(2, "0")}:00
 
 export const TimetableView: React.FC = () => {
   const { data } = useApp();
+  const isAndroid = document.documentElement.dataset.platform === "android";
   const blocks = data?.timetable ?? [];
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<TimetableBlock | null>(null);
   const [defaultDay, setDefaultDay] = useState(1);
   const [defaultStart, setDefaultStart] = useState("09:00");
   const [now, setNow] = useState(() => new Date());
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // The phone shows roughly ten hours of the 24 h grid. Open it at 08:00 instead
+  // of midnight so the day is visible right away; desktop still starts at 00:00.
+  useEffect(() => {
+    if (!isAndroid) return;
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const maxScroll = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    scroller.scrollTop = Math.min(8 * SLOT_HEIGHT, maxScroll);
+  }, [isAndroid]);
 
   const hours = useMemo(
     () => Array.from({ length: END_HOUR - START_HOUR }, (_, offset) => START_HOUR + offset),
@@ -74,7 +86,7 @@ export const TimetableView: React.FC = () => {
       <section className="card tt-card">
         <div className="card__head">
           <div>
-            <h2 className="card__title">每週固定安排</h2>
+            <h2 className="card__title">每週時間表</h2>
             <p className="card__subtitle">
               共 {blocks.length} 項 · 每週 {Number(totalHours.toFixed(1))} 小時 · 全天 00:00–24:00
             </p>
@@ -84,11 +96,11 @@ export const TimetableView: React.FC = () => {
             className="btn btn--primary"
             onClick={() => openNew(1, "09:00")}
           >
-            <Plus size={15} /> 新增安排
+            <Plus size={15} /> 新增時段
           </button>
         </div>
 
-        <div className="tt-scroll">
+        <div className="tt-scroll" ref={scrollRef}>
           <div className="tt">
             <div className="tt__head">
             <div className="tt__gutter tt__gutter--head" />
@@ -128,7 +140,7 @@ export const TimetableView: React.FC = () => {
                     className="tt__cell"
                     style={{ height: SLOT_HEIGHT }}
                     onClick={() => openNew(day.day, hourLabel(hour))}
-                    aria-label={`在${day.label} ${hourLabel(hour)} 新增安排`}
+                    aria-label={`在${day.label} ${hourLabel(hour)} 新增時段`}
                   />
                 ))}
 
@@ -182,7 +194,9 @@ export const TimetableView: React.FC = () => {
         </div>
 
         <p className="tt__foot">
-          <Clock size={12} /> 固定安排每週重複；時間表顯示全天 00:00–24:00，可上下捲動。單次事件請到「日曆」新增。
+          <Clock size={12} /> 時段每週重複；表格顯示全天 00:00–24:00，
+          {isAndroid ? "可上下捲動、左右滑動切換星期。" : "可上下捲動。"}
+          單次事件請到「日曆」新增。
         </p>
       </section>
 

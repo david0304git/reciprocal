@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
 import { useApp } from "../lib/store";
-import { ConfirmDialog, Modal, Segmented } from "./ui";
+import { ConfirmDialog, DateField, Modal, Segmented } from "./ui";
 import type { Task, TaskStatus } from "../lib/types";
 import { addDaysISO, todayISO } from "../lib/date";
 import { PRIORITY_LABELS } from "../lib/stats";
@@ -73,7 +73,7 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
       <Modal
         open={open}
         onClose={onClose}
-        title={task ? "編輯安排" : "新增安排"}
+        title={task ? "編輯待辦" : "新增待辦"}
         subtitle={task ? undefined : "把腦中的待辦倒出來，留給重要的那一件事。"}
         width={520}
         footer={
@@ -97,7 +97,7 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
               className="btn btn--primary"
               disabled={!title.trim() || saving}
             >
-              {saving ? "儲存中…" : task ? "儲存變更" : "新增安排"}
+              {saving ? "儲存中…" : task ? "儲存變更" : "新增待辦"}
             </button>
           </>
         }
@@ -109,7 +109,6 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
               className="input"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="例如：整理這週的照片"
               autoFocus
               maxLength={120}
             />
@@ -141,16 +140,16 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
             />
           </div>
 
-          <div className="field-row">
-            <label className="field">
+          <div className="field-row field-row--date">
+            <div className="field">
               <span className="field__label">截止日（選填）</span>
-              <input
-                className="input"
-                type="date"
+              <DateField
                 value={dueDate}
-                onChange={(event) => setDueDate(event.target.value)}
+                onChange={setDueDate}
+                label="截止日"
+                allowClear
               />
-            </label>
+            </div>
             <label className="field">
               <span className="field__label">分類</span>
               <input
@@ -203,7 +202,6 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
               className="input"
               value={tagsText}
               onChange={(event) => setTagsText(event.target.value)}
-              placeholder="生活, 數位"
             />
             {tags.length > 0 ? (
               <div className="tag-row">
@@ -223,7 +221,6 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
               rows={3}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="補充細節或下一步"
             />
           </label>
         </form>
@@ -231,7 +228,7 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
 
       <ConfirmDialog
         open={confirmDelete}
-        title="刪除這項安排？"
+        title="刪除這項待辦？"
         message="刪除後無法復原，但你可以從先前的備份還原。"
         onClose={() => setConfirmDelete(false)}
         onConfirm={async () => {

@@ -1,7 +1,19 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, X } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useApp } from "../lib/store";
+import {
+  WEEKDAY_LABELS_MON,
+  formatFullWeekday,
+  formatMonthTitle,
+  formatShort,
+  isSameMonth,
+  isToday,
+  iso,
+  monthGrid,
+  parse,
+  todayISO,
+} from "../lib/date";
 
 /* ---------------------------------------------------------------- modal */
 
@@ -126,6 +138,10 @@ export const TimeField: React.FC<TimeFieldProps> = ({
   minHour = 0,
   maxHour = 23,
 }) => {
+  const [open, setOpen] = useState(false);
+  const hourListRef = useRef<HTMLDivElement>(null);
+  const minuteListRef = useRef<HTMLDivElement>(null);
+
   const [rawHour, rawMinute] = (value || "09:00").split(":");
   const hour = String(Number(rawHour) || 0).padStart(2, "0");
   const minute = (rawMinute || "00").slice(0, 2).padStart(2, "0");
@@ -148,33 +164,242 @@ export const TimeField: React.FC<TimeFieldProps> = ({
     return Array.from(options).sort();
   }, [minute, minuteStep]);
 
+  // Bring the current value into view whenever the panel opens.
+  useEffect(() => {
+    if (!open) return;
+    for (const list of [hourListRef.current, minuteListRef.current]) {
+      const active = list?.querySelector<HTMLElement>(".time-picker__item.is-active");
+      if (!list || !active) continue;
+      list.scrollTop = active.offsetTop - list.clientHeight / 2 + active.offsetHeight / 2;
+    }
+  }, [open]);
+
   return (
-    <div className="time-field">
-      <select
-        className="time-field__select"
-        value={hour}
-        onChange={(event) => onChange(`${event.target.value}:${minute}`)}
-        aria-label={`${label}（小時）`}
+    <div className={`time-field${open ? " is-open" : ""}`}>
+      <button
+        type="button"
+        className="time-field__trigger"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        aria-label={`${label} ${hour}:${minute}`}
       >
-        {hourOptions.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-      <span className="time-field__sep">:</span>
-      <select
-        className="time-field__select"
-        value={minute}
-        onChange={(event) => onChange(`${hour}:${event.target.value}`)}
-        aria-label={`${label}（分鐘）`}
+        <span className="time-field__value">
+          {hour}
+          <span className="time-field__colon">:</span>
+          {minute}
+        </span>
+        <ChevronDown size={14} strokeWidth={2} className="time-field__caret" aria-hidden="true" />
+      </button>
+
+      {open ? (
+        <div className="time-picker" role="group" aria-label={label}>
+          <div className="time-picker__head" aria-hidden="true">
+            <span>時</span>
+            <span>分</span>
+          </div>
+          <div className="time-picker__cols">
+            <div
+              className="time-picker__col"
+              ref={hourListRef}
+              role="listbox"
+              aria-label={`${label}（小時）`}
+            >
+              {hourOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="option"
+                  aria-selected={option === hour}
+                  className={`time-picker__item${option === hour ? " is-active" : ""}`}
+                  onClick={() => onChange(`${option}:${minute}`)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            <div
+              className="time-picker__col"
+              ref={minuteListRef}
+              role="listbox"
+              aria-label={`${label}（分鐘）`}
+            >
+              {minuteOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="option"
+                  aria-selected={option === minute}
+                  className={`time-picker__item${option === minute ? " is-active" : ""}`}
+                  onClick={() => onChange(`${hour}:${option}`)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="time-picker__foot">
+            <button type="button" className="btn btn--soft btn--sm" onClick={() => setOpen(false)}>
+              完成
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------------- date field */
+
+interface DateFieldProps {
+  /** `YYYY-MM-DD`, or "" when the field is optional and empty. */
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+  /** Show a 清除 button (optional dates such as a task due date). */
+  allowClear?: boolean;
+}
+
+export const DateField: React.FC<DateFieldProps> = ({
+  value,
+  onChange,
+  label,
+  allowClear = false,
+}) => {
+  const { settings } = useApp();
+  const [open, setOpen] = useState(false);
+  const [month, setMonth] = useState<Date>(() => (value ? parse(value) : new Date()));
+  const weekStartsOn = settings.weekStart;
+
+  // Re-open on the month of the current value.
+  useEffect(() => {
+    if (!open) return;
+    setMonth(value ? parse(value) : new Date());
+  }, [open, value]);
+
+  const grid = useMemo(() => monthGrid(month, weekStartsOn), [month, weekStartsOn]);
+  const weekdayLabels = useMemo(
+    () =>
+      weekStartsOn === 1
+        ? WEEKDAY_LABELS_MON
+        : [WEEKDAY_LABELS_MON[6], ...WEEKDAY_LABELS_MON.slice(0, 6)],
+    [weekStartsOn],
+  );
+
+  const shiftMonth = (delta: number) => {
+    setMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
+  };
+
+  const choose = (next: string) => {
+    onChange(next);
+    setOpen(false);
+  };
+
+  return (
+    <div className={`date-field${open ? " is-open" : ""}`}>
+      <button
+        type="button"
+        className="date-field__trigger"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        aria-label={`${label} ${value || "未選擇"}`}
       >
-        {minuteOptions.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+        <span className="date-field__value">
+          {value ? (
+            <>
+              {formatShort(value)}
+              <span className="date-field__weekday">{formatFullWeekday(value)}</span>
+            </>
+          ) : (
+            <span className="date-field__placeholder">選擇日期</span>
+          )}
+        </span>
+        <ChevronDown size={14} strokeWidth={2} className="date-field__caret" aria-hidden="true" />
+      </button>
+
+      {open ? (
+        <div className="date-picker" role="group" aria-label={label}>
+          <div className="date-picker__head">
+            <button
+              type="button"
+              className="date-picker__nav"
+              onClick={() => shiftMonth(-1)}
+              aria-label="上個月"
+            >
+              <ChevronLeft size={15} strokeWidth={2} />
+            </button>
+            <span className="date-picker__title">{formatMonthTitle(month)}</span>
+            <button
+              type="button"
+              className="date-picker__nav"
+              onClick={() => shiftMonth(1)}
+              aria-label="下個月"
+            >
+              <ChevronRight size={15} strokeWidth={2} />
+            </button>
+          </div>
+
+          <div className="date-picker__weekdays" aria-hidden="true">
+            {weekdayLabels.map((day) => (
+              <span key={day}>{day}</span>
+            ))}
+          </div>
+
+          <div className="date-picker__grid" role="grid">
+            {grid.map((day) => {
+              const dayIso = iso(day);
+              const outside = !isSameMonth(day, month);
+              const selected = dayIso === value;
+              return (
+                <button
+                  key={dayIso}
+                  type="button"
+                  role="gridcell"
+                  aria-selected={selected}
+                  aria-label={dayIso}
+                  className={[
+                    "date-picker__day",
+                    outside ? "is-outside" : "",
+                    selected ? "is-selected" : "",
+                    isToday(dayIso) ? "is-today" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => choose(dayIso)}
+                >
+                  {day.getDate()}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="date-picker__foot">
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => choose(todayISO())}
+            >
+              今天
+            </button>
+            {allowClear ? (
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => choose("")}
+              >
+                清除
+              </button>
+            ) : null}
+            <span className="date-picker__spacer" />
+            <button
+              type="button"
+              className="btn btn--soft btn--sm"
+              onClick={() => setOpen(false)}
+            >
+              完成
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -80,8 +80,8 @@ export const TimetableForm: React.FC<Props> = ({
       <Modal
         open={open}
         onClose={onClose}
-        title={block ? "編輯固定安排" : "新增固定安排"}
-        subtitle={block ? "這是每週重複的安排，會出現在每個對應的星期。" : "星期一至五，每週重複出現。"}
+        title={block ? "編輯時段" : "新增時段"}
+        subtitle={block ? "這是每週重複的時段，會出現在每個對應的星期。" : "星期一至五，每週重複出現。"}
         width={520}
         footer={
           <>
@@ -104,19 +104,18 @@ export const TimetableForm: React.FC<Props> = ({
               className="btn btn--primary"
               disabled={!title.trim() || invalidTime || saving}
             >
-              {saving ? "儲存中…" : block ? "儲存變更" : "新增安排"}
+              {saving ? "儲存中…" : block ? "儲存變更" : "新增時段"}
             </button>
           </>
         }
       >
         <form id="timetable-form" className="form" onSubmit={submit}>
           <label className="field">
-            <span className="field__label">安排名稱</span>
+            <span className="field__label">時段名稱</span>
             <input
               className="input"
               value={title}
               onChange={(changeEvent) => setTitle(changeEvent.target.value)}
-              placeholder="例如：深度工作、英文課、運動"
               autoFocus
               maxLength={60}
             />
@@ -131,7 +130,7 @@ export const TimetableForm: React.FC<Props> = ({
             />
           </div>
 
-          <div className="field-row">
+          <div className="field-row field-row--times">
             <div className="field">
               <span className="field__label">開始</span>
               <TimeField value={startTime} onChange={setStartTime} label="開始時間" />
@@ -168,7 +167,6 @@ export const TimetableForm: React.FC<Props> = ({
               rows={2}
               value={notes}
               onChange={(changeEvent) => setNotes(changeEvent.target.value)}
-              placeholder="這段時間要做什麼？"
             />
           </label>
         </form>
@@ -176,7 +174,7 @@ export const TimetableForm: React.FC<Props> = ({
 
       <ConfirmDialog
         open={confirmDelete}
-        title="刪除這項固定安排？"
+        title="刪除這個時段？"
         message={`「${block?.title ?? ""}」會從每個星期移除。`}
         onClose={() => setConfirmDelete(false)}
         onConfirm={async () => {

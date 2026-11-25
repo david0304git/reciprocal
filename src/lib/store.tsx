@@ -331,7 +331,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setData((current) =>
           current ? { ...current, timetable: upsert(current.timetable, block) } : current,
         );
-        notify(input.id ? "安排已更新" : "已新增固定安排", "ok");
+        notify(input.id ? "時段已更新" : "已新增時段", "ok");
         return block;
       } catch (cause) {
         fail(cause);
@@ -350,7 +350,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ? { ...current, timetable: current.timetable.filter((block) => block.id !== id) }
             : current,
         );
-        notify("安排已刪除", "ok");
+        notify("時段已刪除", "ok");
       } catch (cause) {
         fail(cause);
       }
@@ -505,7 +505,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const task = await api.saveTask(input);
         setData((current) => (current ? { ...current, tasks: upsert(current.tasks, task) } : current));
-        if (input.id) notify("安排已更新", "ok");
+        if (input.id) notify("待辦已更新", "ok");
         return task;
       } catch (cause) {
         fail(cause);
@@ -534,7 +534,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setData((current) =>
           current ? { ...current, tasks: current.tasks.filter((task) => task.id !== id) } : current,
         );
-        notify("安排已刪除", "ok");
+        notify("待辦已刪除", "ok");
       } catch (cause) {
         fail(cause);
       }

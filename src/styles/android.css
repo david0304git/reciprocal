@@ -1,0 +1,719 @@
+/* ==================================================================
+   Android shell
+   ------------------------------------------------------------------
+   The desktop layout is a 236 px sidebar next to the content grid. On a
+   phone the sidebar becomes a bottom tab bar and the content takes the
+   full width. Everything here is scoped to <html data-platform="android">
+   so the macOS/Windows layout is untouched.
+
+   Sections
+     1. shell, bottom tab bar, safe areas
+     2. shared page / touch targets / forms
+     3. home
+     4. calendar (month grid + day dots)
+     5. week timetable (horizontal scroller, sticky axis)
+     6. tasks (list + kanban)
+     7. modals (bottom sheets)
+     8. interface-style fixes (glass / swiss)
+================================================================== */
+
+html[data-platform="android"] body {
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ------------------------------------------------- shell / bottom tab bar */
+
+html[data-platform="android"] .shell {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100dvh;
+}
+
+html[data-platform="android"] .main {
+  order: 1;
+  min-height: 0;
+}
+
+html[data-platform="android"] .sidebar {
+  order: 2;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px 6px calc(5px + env(safe-area-inset-bottom, 0px));
+  border-right: 0;
+  border-top: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  z-index: 20;
+}
+
+html[data-platform="android"] .sidebar__drag,
+html[data-platform="android"] .sidebar__brand,
+html[data-platform="android"] .sidebar__spacer,
+html[data-platform="android"] .sidebar__foot,
+html[data-platform="android"] .today-card,
+html[data-platform="android"] .nav__kbd,
+html[data-platform="android"] .main__drag {
+  display: none;
+}
+
+html[data-platform="android"] .nav {
+  flex: 3 1 0;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 2px;
+}
+
+html[data-platform="android"] .nav__item,
+html[data-platform="android"] .sidebar > .nav__item--ghost {
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  height: auto;
+  min-height: 54px;
+  padding: 5px 2px;
+  border-radius: var(--radius-sm);
+  font-size: 10.5px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+html[data-platform="android"] .nav__item:hover {
+  background: transparent;
+}
+
+html[data-platform="android"] .nav__label {
+  flex: none;
+}
+
+html[data-platform="android"] .main__scroll {
+  /* a little more air above the page name on every page */
+  padding: 28px 16px 28px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* --------------------------------------------- shared page / touch targets */
+
+html[data-platform="android"] .page {
+  padding-top: 0;
+}
+
+html[data-platform="android"] .page__title {
+  font-size: 25px;
+  line-height: 1.12;
+}
+
+html[data-platform="android"] .page__subtitle {
+  font-size: 12.5px;
+}
+
+html[data-platform="android"] .page__actions {
+  width: 100%;
+}
+
+/* 40 px is the smallest comfortable target; the desktop rail uses 28 px. */
+html[data-platform="android"] .icon-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 10px;
+}
+
+html[data-platform="android"] .btn {
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+html[data-platform="android"] .mini-btn {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+html[data-platform="android"] .seg__btn {
+  height: 34px;
+}
+
+html[data-platform="android"] .seg--sm .seg__btn {
+  height: 32px;
+  padding: 0 11px;
+}
+
+html[data-platform="android"] .switch {
+  width: 48px;
+  height: 32px;
+}
+
+html[data-platform="android"] .switch__knob {
+  width: 26px;
+  height: 26px;
+}
+
+html[data-platform="android"] .switch.is-on .switch__knob {
+  transform: translateX(18px);
+}
+
+html[data-platform="android"] input,
+html[data-platform="android"] select,
+html[data-platform="android"] textarea {
+  font-size: 16px; /* prevents the WebView from zooming into focused fields */
+}
+
+/* Colour swatches and weekday chips are 24/30 px on the desktop scale. */
+html[data-platform="android"] .swatch {
+  width: 34px;
+  height: 34px;
+}
+
+html[data-platform="android"] .weekday-chip {
+  width: 38px;
+  height: 36px;
+}
+
+html[data-platform="android"] .checkbox {
+  height: 42px;
+}
+
+html[data-platform="android"] input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+html[data-platform="android"] .input,
+html[data-platform="android"] .select {
+  height: 42px;
+}
+
+html[data-platform="android"] .textarea {
+  min-height: 96px;
+}
+
+html[data-platform="android"] .search {
+  height: 40px;
+}
+
+html[data-platform="android"] .quick-add {
+  height: 42px;
+}
+
+/* Let the field itself fill the wrapper, otherwise only the 27 px text box is tappable. */
+html[data-platform="android"] .search input,
+html[data-platform="android"] .quick-add input {
+  height: 100%;
+  min-height: 34px;
+}
+
+/* ------------------------------------------------------------------ home */
+
+html[data-platform="android"] .home__time {
+  font-size: clamp(56px, 21vw, 108px);
+}
+
+html[data-platform="android"] .home__clock-card {
+  padding: 18px 16px;
+}
+
+/* -------------------------------------------------------------- calendar */
+
+/* Stack the countdown panel below the month grid. */
+html[data-platform="android"] .calendar-layout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+html[data-platform="android"] .calendar-main {
+  order: 1;
+}
+
+html[data-platform="android"] .countdown-panel {
+  order: 2;
+  max-height: none;
+}
+
+/* Two 170 px cards make the countdown value wrap; stack them instead. */
+html[data-platform="android"] .countdown-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-platform="android"] .page--calendar {
+  height: auto;
+  min-height: 0;
+}
+
+html[data-platform="android"] .calendar-grid {
+  grid-template-rows: repeat(6, minmax(62px, auto));
+  gap: 3px;
+}
+
+html[data-platform="android"] .day {
+  min-height: 62px;
+  gap: 2px;
+  padding: 4px 4px 5px;
+  border-radius: 10px;
+}
+
+html[data-platform="android"] .day__top {
+  min-height: 19px;
+}
+
+html[data-platform="android"] .day__number {
+  min-width: 19px;
+  height: 19px;
+  padding: 0 3px;
+  font-size: 11.5px;
+}
+
+/* A 47 px cell cannot hold "12:30 與朋友午餐" — show coloured dots instead.
+   The inline `background`/`color` on .day__event still carries the event
+   colour, so currentColor paints the dot; the text stays in the DOM (only
+   font-size:0 hides it) and the day button keeps its aria-label. */
+html[data-platform="android"] .day__events {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  margin-top: 1px;
+  overflow: hidden;
+}
+
+html[data-platform="android"] .day__event {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border-radius: 50%;
+  background: currentColor !important;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+}
+
+html[data-platform="android"] .day__more {
+  padding-left: 0;
+  font-size: 8px;
+  line-height: 1;
+}
+
+/* ------------------------------------------ week timetable (安排 → 週時間表) */
+
+html[data-platform="android"] .tt-card {
+  padding: 14px 12px 10px;
+  overflow: hidden;
+}
+
+html[data-platform="android"] .tt-card .card__head {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+html[data-platform="android"] .tt-card .card__head .btn {
+  flex: none;
+}
+
+/* The 680 px desktop grid becomes a phone-sized week strip: the time axis
+   stays pinned on the left, the five day columns are swiped horizontally
+   with gentle snapping. Column width comes from the 94 px track below. */
+html[data-platform="android"] .tt-scroll {
+  margin: 0;
+  padding: 0 0 2px;
+  max-height: min(54dvh, 500px);
+  overflow: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 34px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html[data-platform="android"] .tt-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-platform="android"] .tt {
+  width: max-content;
+  min-width: 0;
+}
+
+html[data-platform="android"] .tt__head,
+html[data-platform="android"] .tt__body {
+  grid-template-columns: 34px repeat(5, var(--tt-col, 94px));
+  gap: 6px;
+}
+
+html[data-platform="android"] .tt__head {
+  z-index: 6;
+  background: var(--surface);
+}
+
+html[data-platform="android"] .tt__day-head {
+  gap: 4px;
+  padding: 5px 7px;
+  border-radius: 8px;
+}
+
+html[data-platform="android"] .tt__day-label {
+  font-size: 11px;
+}
+
+html[data-platform="android"] .tt__day-count {
+  font-size: 9px;
+}
+
+html[data-platform="android"] .tt__gutter {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  padding-right: 1px;
+  background: var(--surface);
+  border-right: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+html[data-platform="android"] .tt__gutter--head {
+  z-index: 2;
+}
+
+html[data-platform="android"] .tt__hour {
+  padding-right: 4px;
+  font-size: 9px;
+}
+
+html[data-platform="android"] .tt__col {
+  border-radius: 8px;
+  scroll-snap-align: start;
+}
+
+html[data-platform="android"] .tt__block {
+  right: 4px;
+  padding: 5px 6px;
+  border-radius: 7px;
+}
+
+html[data-platform="android"] .tt__block-title {
+  display: -webkit-box;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: normal;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+html[data-platform="android"] .tt__block-time {
+  font-size: 9px;
+}
+
+html[data-platform="android"] .tt__block-notes {
+  font-size: 9px;
+}
+
+html[data-platform="android"] .tt__foot {
+  margin-top: 8px;
+  font-size: 10px;
+  line-height: 1.5;
+  flex: none;
+}
+
+/* ---------------------------------- schedule (week) fills the viewport height */
+
+html[data-platform="android"] .page--schedule-week {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 2px;
+}
+
+html[data-platform="android"] .page--schedule-week .page__header {
+  flex: none;
+}
+
+html[data-platform="android"] .page--schedule-week .tt-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+html[data-platform="android"] .page--schedule-week .tt-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+/* Day-track width follows the device class (mainstream widths: 360 / 393 / 412 / 430 dp). */
+html[data-platform="android"] {
+  --tt-col: 94px;
+}
+
+@media (max-width: 360px) {
+  html[data-platform="android"] {
+    --tt-col: 84px;
+  }
+}
+
+@media (min-width: 431px) {
+  html[data-platform="android"] {
+    --tt-col: 104px;
+  }
+}
+
+/* Tablets / foldables: show the whole week at once instead of a scroll strip. */
+@media (min-width: 600px) {
+  html[data-platform="android"] .tt-scroll {
+    scroll-snap-type: none;
+  }
+
+  html[data-platform="android"] .tt {
+    width: 100%;
+    min-width: 0;
+  }
+
+  html[data-platform="android"] .tt__head,
+  html[data-platform="android"] .tt__body {
+    grid-template-columns: 46px repeat(5, minmax(0, 1fr));
+  }
+
+  html[data-platform="android"] .tt__day-label {
+    font-size: 12px;
+  }
+}
+
+/* ----------------------------------------------------------- tasks / board */
+
+/* There is no hover on a phone: keep the row actions visible. */
+html[data-platform="android"] .task__actions {
+  opacity: 1;
+}
+
+html[data-platform="android"] .task__actions .icon-btn {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+}
+
+html[data-platform="android"] .task__check {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+html[data-platform="android"] .task {
+  gap: 8px;
+  padding: 11px 10px;
+}
+
+/* Kanban: three readable columns, swiped horizontally. */
+html[data-platform="android"] .board {
+  grid-template-columns: repeat(3, minmax(76vw, 1fr));
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 4px;
+  padding-bottom: 8px;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+html[data-platform="android"] .board__column {
+  scroll-snap-align: start;
+}
+
+/* Start/end pickers: stack on phones so the custom picker has room for both columns. */
+html[data-platform="android"] .field-row--times {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* Same for the date + "all day" row: the calendar panel needs the full sheet width. */
+html[data-platform="android"] .field-row--date {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* The desktop home uses `min-height: calc(100vh - 86px)`, which ignores the bottom tab bar and the
+   scroll padding, so the page was permanently ~18px taller than its viewport (it could always be
+   dragged up a little, even with nothing on it). Fill the scroll area exactly instead; the page
+   still grows and scrolls when the cards genuinely do not fit. */
+html[data-platform="android"] .home {
+  min-height: 100%;
+}
+
+/* Agenda rows: comfy touch target for the long-press drag. */
+html[data-platform="android"] .agenda-row__main {
+  min-height: 56px;
+  padding: 16px;
+}
+
+html[data-platform="android"] .agenda-row__countdown {
+  font-size: 15px;
+}
+
+/* The WebView must never pan sideways, whatever a title contains. */
+html[data-platform="android"] .main__scroll {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
+/* ------------------------------------------------- home cards: drag to reorder */
+
+html[data-platform="android"] .home-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform 220ms cubic-bezier(0.22, 0.75, 0.3, 1);
+  will-change: transform;
+}
+
+html[data-platform="android"] .home-card > * {
+  flex: 1 1 auto;
+}
+
+html[data-platform="android"] .home-card.is-dragging {
+  position: relative;
+  z-index: 6;
+  transition: none;
+  cursor: grabbing;
+  filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.22));
+}
+
+/* Only one card left (nothing scheduled today): let it use the full width. */
+html[data-platform="android"] .home__panels.home__panels--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* ------------------------------------------------------- styles: 瑞士工具 */
+
+/* The Swiss style lays the home panels out as a 300px + 1fr desktop grid *after* the global
+   ≤960px "stack them" rule, so on a phone the day-detail card was squeezed to a few pixels and
+   every character wrapped onto its own line. Stack them like the other styles do. */
+html[data-platform="android"][data-ui-style="swiss"] .home__panels {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+html[data-platform="android"][data-ui-style="swiss"] .home__time {
+  font-size: clamp(64px, 24vw, 120px);
+}
+
+html[data-platform="android"][data-ui-style="swiss"] .nav__item--active,
+html[data-platform="android"][data-ui-style="swiss"] .nav__item--active:hover {
+  border-bottom-color: transparent;
+  box-shadow: inset 0 -2px 0 var(--text);
+}
+
+/* ----------------------------------------------------------- modal sheets */
+
+/* Modals become bottom sheets: full width, thumb reachable, scrollable. */
+html[data-platform="android"] .modal-backdrop {
+  align-items: flex-end;
+  padding: 0;
+  background: color-mix(in srgb, #14120f 44%, transparent);
+}
+
+html[data-platform="android"] .modal {
+  max-width: 100% !important;
+  max-height: 90dvh;
+  border-radius: 20px 20px 0 0;
+  border-bottom: 0;
+  padding-bottom: 0;
+  animation: android-sheet-in 240ms cubic-bezier(0.22, 0.75, 0.3, 1) both;
+}
+
+html[data-platform="android"] .modal__head {
+  padding: 16px 18px 12px;
+}
+
+html[data-platform="android"] .modal__body {
+  padding: 2px 18px 16px;
+  overscroll-behavior: contain;
+}
+
+html[data-platform="android"] .modal__foot {
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-radius: 0;
+}
+
+@keyframes android-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ------------------------------------------------- setting rows on a phone */
+
+/* Rows that pair a long description with a wide control group (the import
+   range selects) must stack: squeezing the text into a 90 px column makes it
+   unreadable. Narrow switch/button rows still fit on one line. */
+html[data-platform="android"] .setting-row {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+html[data-platform="android"] .setting-row__text {
+  flex: 1 1 170px;
+}
+
+/* In the stacked calendar rows (flex-direction: column) a flex-basis would turn
+   into 170 px of vertical gap above the picker, so keep the text natural height. */
+html[data-platform="android"] .setting-row--calendar .setting-row__text {
+  flex: none;
+}
+
+html[data-platform="android"] .range-controls {
+  flex: 1 1 100%;
+  justify-content: flex-start;
+}
+
+/* "目前：紙本手帳" must never wrap inside the pill. */
+html[data-platform="android"] .card__head > .badge {
+  flex: none;
+  white-space: nowrap;
+  height: auto;
+  min-height: 21px;
+  padding: 3px 9px;
+  line-height: 1.1;
+}
+
+/* ------------------------------------------------ interface-style repairs */
+
+html[data-platform="android"][data-ui-style="glass"] .shell {
+  padding: 10px;
+}
+
+html[data-platform="android"][data-ui-style="glass"] .sidebar {
+  background: var(--glass-bg);
+  border-radius: 24px;
+}
+
+html[data-platform="android"][data-ui-style="glass"] .tt__head,
+html[data-platform="android"][data-ui-style="glass"] .tt__gutter {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(26px) saturate(1.7);
+  -webkit-backdrop-filter: blur(26px) saturate(1.7);
+}
+
+/* Swiss keeps square corners: square event dots instead of the round ones. */
+html[data-platform="android"][data-ui-style="swiss"] .day__event {
+  border-radius: 0;
+}
+
+/* Touch devices have no hover affordances. */
+@media (hover: none) {
+  html[data-platform="android"] .nav__item:hover,
+  html[data-platform="android"] .today-card:hover,
+  html[data-platform="android"] .day:hover {
+    background: transparent;
+  }
+}
