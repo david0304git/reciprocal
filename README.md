@@ -15,6 +15,7 @@ Reciprocal 是一個為個人打造的桌面應用：安排行程、追蹤待辦
 | --- | --- | --- |
 | **macOS** | macOS 10.15+（Apple 日曆同步需 macOS 14+） | `Reciprocal-<version>-macos-arm64.zip` |
 | **Windows** | Windows 10／11 x64，WebView2（Windows 11 內建；10 可能由安裝檔下載） | `Reciprocal_<version>_x64-setup.exe` |
+| **Android** | Android 8.0+（API 26） | `Reciprocal-<version>-android.apk`（側載） |
 
 Windows 版與 macOS 版共用同一份 Rust／React 程式碼與 SQLite 格式；**Apple 日曆同步僅限 macOS**（EventKit），Windows 版其餘功能（主頁、日曆、週時間表、安排、備份、更新檢查）完整可用。
 
@@ -28,6 +29,18 @@ npx tauri build --bundles nsis
 ```
 
 產物在 `src-tauri/target/release/bundle/nsis/`。
+
+Android 版是同一套 React 介面的 WebView 包裝（Kotlin 橋接：SQLite、系統日曆、檔案 I/O），
+專案在 [`android/`](android/README-ANDROID.md)，與桌面版共用資料格式與指令介面。
+
+```bash
+cd android
+./scripts/build-web.sh          # 建置 android/web 前端並複製到 assets
+./scripts/build.sh :app:assembleDebug    # 產物 app/build/outputs/apk/debug/app-debug.apk
+```
+
+- 需求：JDK 17+、Android SDK 36（編譯用）、Android 8.0 以上裝置。
+- APK 以 Android debug keystore 簽署（側載用），詳細驗證紀錄見 [`android/README-ANDROID.md`](android/README-ANDROID.md)。
 
 ## 功能
 
@@ -195,7 +208,12 @@ reciprocal/
 │   ├── src/db.rs            # schema、遷移、種子資料
 │   ├── src/models.rs        # 資料結構（camelCase JSON）
 │   └── tauri.conf.json      # 視窗、bundle、識別碼
+├── android/                 # Android 版（Kotlin ＋ WebView，含自己的前端副本）
+│   ├── app/                 # Gradle 模組（Kotlin 橋接、系統日曆、assets/web）
+│   ├── web/                 # Android 版前端（由 src/ 分支出來）
+│   └── scripts/             # 建置／安裝／E2E（Chrome DevTools Protocol）
 ├── scripts/shoot.mjs        # Playwright 互動檢查與截圖
+├── scripts/make-desktop-icons.mjs  # 由同一個沙漏標記產生桌面／iOS／Android 圖標
 └── docs/screenshots/        # README 使用的畫面
 ```
 

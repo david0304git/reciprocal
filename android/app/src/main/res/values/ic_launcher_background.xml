@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paper tile behind the hourglass mark (design M2). -->
+    <color name="ic_launcher_background">#F4F1E9</color>
+</resources>

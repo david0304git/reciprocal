@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      The whole UI is drawn by the WebView, so the window decoration should stay out of the way:
+      transparent system bars (edge-to-edge) with the paper background showing through, and a
+      matching window background so there is no flash before the page paints.
+    -->
+    <style name="Theme.Reciprocal" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper_light</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

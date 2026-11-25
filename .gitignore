@@ -27,3 +27,15 @@ dist-ssr
 .shots
 .test-data
 data
+
+# Android project (Gradle + its own frontend copy)
+android/.gradle/
+android/.gradle-home/
+android/build/
+android/app/build/
+android/local.properties
+android/web/node_modules/
+android/web/dist/
+android/artifacts/
+android/.idea/
+android/scripts/*.log
