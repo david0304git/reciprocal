@@ -48,23 +48,35 @@
 | 簽章 | macOS ad-hoc；Windows 未簽章 | Android debug keystore（`CN=Android Debug`） |
 | 檔案格式／備份 | JSON（`tasks`／`events`／`timetable`／`habits`／`settings`） | 相同格式，可互換 |
 
-## 兩份前端的同步規則
+## 兩份前端：設計各自獨立（允許分歧）
 
-repo 內有兩份前端：`src/`（桌面）與 `android/web/`（Android，給 `WebViewAssetLoader`）。**內容必須相同**：
+repo 內有兩份前端，**各自獨立演化、不需要相同**：
 
-```bash
-rsync -a --exclude .DS_Store src/ android/web/src/
-diff -rq src android/web/src        # 必須無輸出
-```
+| 副本 | 平台 | 建置方式 | 產物 |
+| --- | --- | --- | --- |
+| `src/` | 桌面（Tauri） | `npm run build` → `dist/` | `tauri build` 打包 |
+| `android/web/` | Android（WebView ＋ `WebViewAssetLoader`） | `android/scripts/build-web.sh` | `android/app/src/main/assets/web/` |
 
-例外（刻意不同、不要覆蓋）：
+規則：
 
-| 檔案 | 差異 |
-| --- | --- |
-| `android/web/vite.config.ts` | 多 `base: "./"`（WebView 資產用相對路徑） |
-| `android/web/index.html` | 載入 `tauri-shim.js`（桌面端無害，會自行停用） |
-| `android/web/src/styles/android.css` | Android 專屬樣式（由 `main.tsx` 匯入，桌面不載入） |
-| `android/web/src/main.tsx` | 平台判斷含 `Android`（桌面維持 `macos`／`windows`） |
+1. **只屬於單一平台的設計改動，就只改那一份**，不用同步到另一邊。
+2. 每個分歧都要登記到下面的「差異清單」（改了什麼、哪個平台、為什麼、版本）。
+3. 兩平台都要的功能，可以複製或各自實作；同一功能兩邊都改過時，在清單註明「已同步」。
+4. 建置設定天生不同，不算分歧：`android/web/vite.config.ts` 有 `base: "./"`（WebView 資產要相對路徑）；
+   `index.html` 兩邊相同，`tauri-shim.js` 在桌面端會自行停用（找不到 `window.ReciprocalNative`）。
+
+### 差異清單
+
+> 每次只改單一平台時，**新增一列**；同一列的「已同步」欄要更新。
+
+| 版本 | 平台 | 差異 | 狀態 |
+| --- | --- | --- | --- |
+| 0.1.8 | 兩平台 | 圖標：桌面沙漏 58% tile／Android ×0.78（≈39%） | 刻意不同（Android 安全區＋回饋） |
+| 0.1.8 | Android | 底部導航（主頁／日曆／時間表／設定） | 僅手機 |
+| 0.1.8 | Android | 匯入 `styles/android.css`、`platform` 偵測含 `Android`、安全區 padding | 僅手機 |
+| 0.1.8 | 桌面 | 側欄、`main__drag` 拖曳區、⌘1–⌘3 快捷鍵、視窗尺寸 | 僅桌面 |
+| 0.1.8 | 桌面 | 液態玻璃：只有主頁時鐘無框（側欄保留玻璃面板） | 已同步（Android 無側欄） |
+| 0.1.8 | 兩平台 | 目前兩份程式碼仍逐位元組相同（除建置設定） | 尚未出現實質分歧 |
 
 ## 後端對等檢查
 
