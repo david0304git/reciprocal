@@ -23,10 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
-# Reciprocal working files
+# Reciprocal working files (desktop app data dir at the repo root only — the Android
+# Kotlin package `.../reciprocal/data/` must not be ignored)
 .shots
 .test-data
-data
+/data/
 
 # Android project (Gradle + its own frontend copy)
 android/.gradle/
