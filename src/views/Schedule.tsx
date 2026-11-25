@@ -30,7 +30,7 @@ export const ScheduleView: React.FC = () => {
   }, [tasks, blocks, today]);
 
   return (
-    <div className={`page page--schedule ${tab === "week" ? "page--schedule-week" : ""}`}>
+    <div className="page">
       <header className="page__header">
         <div className="page__heading">
           <p className="page__eyebrow">時間表</p>

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
 import { useApp } from "../lib/store";
-import { ConfirmDialog, DateField, Modal, Segmented } from "./ui";
+import { ConfirmDialog, Modal, Segmented } from "./ui";
 import type { Task, TaskStatus } from "../lib/types";
 import { addDaysISO, todayISO } from "../lib/date";
 import { PRIORITY_LABELS } from "../lib/stats";
@@ -109,6 +109,7 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
               className="input"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
+              placeholder="例如：整理這週的照片"
               autoFocus
               maxLength={120}
             />
@@ -140,16 +141,16 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
             />
           </div>
 
-          <div className="field-row field-row--date">
-            <div className="field">
+          <div className="field-row">
+            <label className="field">
               <span className="field__label">截止日（選填）</span>
-              <DateField
+              <input
+                className="input"
+                type="date"
                 value={dueDate}
-                onChange={setDueDate}
-                label="截止日"
-                allowClear
+                onChange={(event) => setDueDate(event.target.value)}
               />
-            </div>
+            </label>
             <label className="field">
               <span className="field__label">分類</span>
               <input
@@ -202,6 +203,7 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
               className="input"
               value={tagsText}
               onChange={(event) => setTagsText(event.target.value)}
+              placeholder="生活, 數位"
             />
             {tags.length > 0 ? (
               <div className="tag-row">
@@ -221,6 +223,7 @@ export const TaskForm: React.FC<Props> = ({ open, task, initialStatus, onClose }
               rows={3}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
+              placeholder="補充細節或下一步"
             />
           </label>
         </form>

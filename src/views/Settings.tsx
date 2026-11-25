@@ -18,7 +18,6 @@ import { isTauri } from "../lib/api";
 import { defaultBackupName, exportInBrowser, pickExportPath, pickImportPath } from "../lib/files";
 import type { AppleCalendarInfo, AppleStatus, StorageInfo } from "../lib/types";
 import { ConfirmDialog, Segmented } from "../components/ui";
-import { HOME_RANGE_KEY, HOME_RANGE_OPTIONS, readHomeRangeDays } from "../lib/nextUp";
 import { CalendarMultiSelect } from "../components/CalendarMultiSelect";
 
 const calendarKindLabel = (calendar: {
@@ -88,11 +87,6 @@ export const SettingsView: React.FC = () => {
     checkingUpdates,
     checkForUpdates,
   } = useApp();
-  // Android reads the system calendar through CalendarContract; the macOS build uses EventKit,
-  // but both are served by the same (historically named) apple_* commands.
-  const isAndroid = document.documentElement.dataset.platform === "android";
-  const calendarLabel = isAndroid ? "系統日曆" : "Apple 日曆";
-  const importedCalendarLabel = isAndroid ? "個系統行程" : "個 Apple 行程";
   const [info, setInfo] = useState<StorageInfo | null>(null);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -302,9 +296,7 @@ export const SettingsView: React.FC = () => {
         <div className="page__heading">
           <p className="page__eyebrow">設定</p>
           <h1 className="page__title">讓它更適合你</h1>
-          <p className="page__subtitle">
-            {isAndroid ? "所有資料都留在這台裝置上" : "所有資料都留在這台電腦上"}，不會上傳到任何地方。
-          </p>
+          <p className="page__subtitle">所有資料都留在這台電腦上，不會上傳到任何地方。</p>
         </div>
       </header>
 
@@ -365,29 +357,6 @@ export const SettingsView: React.FC = () => {
               </button>
             );
           })}
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="card__head">
-          <div>
-            <h2 className="card__title">主頁</h2>
-            <p className="card__subtitle">主頁會列出接下來的行程，顯示範圍可調整。</p>
-          </div>
-        </div>
-        <div className="setting-row">
-          <div className="setting-row__text">
-            <p className="setting-row__title">主頁顯示範圍</p>
-            <p className="setting-row__desc">主頁會列出這個範圍內的所有行程。</p>
-          </div>
-          <Segmented
-            value={String(readHomeRangeDays(data?.settings))}
-            onChange={(value) => void actions.setSetting(HOME_RANGE_KEY, value)}
-            options={HOME_RANGE_OPTIONS.map((days) => ({
-              value: String(days),
-              label: `${days} 天`,
-            }))}
-          />
         </div>
       </section>
 
@@ -486,17 +455,16 @@ export const SettingsView: React.FC = () => {
         <section className="card">
           <div className="card__head">
             <div>
-              <h2 className="card__title">{calendarLabel}</h2>
+              <h2 className="card__title">Apple 日曆</h2>
               <p className="card__subtitle">
-                雙向同步：App 行程寫入「Reciprocal」日曆；
-                {isAndroid ? "其他系統日曆" : "其他 Apple 日曆"}匯入為唯讀。
+                雙向同步：App 行程寫入「Reciprocal」日曆；其他 Apple 日曆匯入為唯讀。
               </p>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={apple.enabled}
-              aria-label={`連結${calendarLabel}`}
+              aria-label="連結 Apple 日曆"
               className={`switch ${apple.enabled ? "is-on" : ""}`}
               onClick={handleAppleToggle}
               disabled={appleBusy}
@@ -511,23 +479,19 @@ export const SettingsView: React.FC = () => {
                 <span className={`status-dot ${apple.enabled ? "is-on" : ""}`} />
                 {apple.enabled
                   ? apple.authorization === "fullAccess"
-                    ? `已連結${calendarLabel}`
+                    ? "已連結 Apple 日曆"
                     : "已連結，但需要重新授權"
-                  : `未連結${calendarLabel}`}
+                  : "未連結 Apple 日曆"}
               </p>
               <p className="setting-row__desc">
                 {appleBusy
-                  ? isAndroid
-                    ? "等待系統授權或同步中…"
-                    : "等待 macOS 授權或同步中…"
+                  ? "等待 macOS 授權或同步中…"
                   : apple.enabled
-                    ? `已匯入 ${apple.importedCount} ${importedCalendarLabel}${
+                    ? `已匯入 ${apple.importedCount} 個 Apple 行程${
                         apple.lastSync ? ` · 上次同步 ${formatSyncTime(apple.lastSync)}` : ""
                       }`
                     : apple.authorization === "denied" || apple.authorization === "restricted"
-                      ? isAndroid
-                        ? "權限被拒絕，請到「設定 → 應用程式 → Reciprocal → 權限 → 日曆」開啟。"
-                        : "權限被拒絕，請到「系統設定 → 隱私權與安全性 → 日曆」開啟 Reciprocal。"
+                      ? "權限被拒絕，請到「系統設定 → 隱私權與安全性 → 日曆」開啟 Reciprocal。"
                       : "連結後會建立一個「Reciprocal」日曆，並匯入你其他日曆的行程。"}
               </p>
             </div>
@@ -547,7 +511,7 @@ export const SettingsView: React.FC = () => {
                 onClick={handleAppleToggle}
                 disabled={appleBusy}
               >
-                {appleBusy ? "等待授權…" : `連結${calendarLabel}`}
+                {appleBusy ? "等待授權…" : "連結 Apple 日曆"}
               </button>
             )}
           </div>
@@ -556,9 +520,7 @@ export const SettingsView: React.FC = () => {
             <div className="notice">
               <Info size={15} />
               <span>
-                {isAndroid
-                  ? "日曆權限尚未開啟（可能是重新安裝後 Android 重置了權限）。"
-                  : "日曆權限尚未開啟（可能是重新編譯後 macOS 重置了權限）。"}
+                日曆權限尚未開啟（可能是重新編譯後 macOS 重置了權限）。
               </span>
               <button
                 type="button"
@@ -597,7 +559,7 @@ export const SettingsView: React.FC = () => {
 
             {selectedCalendars.length === 0 ? (
               <p className="form-hint">
-                目前沒有匯入任何{isAndroid ? "系統日曆" : " Apple 日曆"}；App 的行程仍會寫入「Reciprocal」日曆。
+                目前沒有匯入任何 Apple 日曆；App 的行程仍會寫入「Reciprocal」日曆。
               </p>
             ) : null}
 
@@ -605,7 +567,7 @@ export const SettingsView: React.FC = () => {
               <div className="setting-row__text">
                 <p className="setting-row__title">倒數卡片顯示的日曆</p>
                 <p className="setting-row__desc">
-                  只影響日曆頁{isAndroid ? "下方" : "左側"}的倒數卡片；取消的行程仍會出現在月曆與主頁明細。App 內建立的行程一律顯示。
+                  只影響日曆頁左側的倒數卡片；取消的行程仍會出現在月曆與主頁明細。App 內建立的行程一律顯示。
                 </p>
               </div>
               <CalendarMultiSelect
@@ -794,9 +756,7 @@ export const SettingsView: React.FC = () => {
             Reciprocal 是一個專注在「日常往返」的個人工具：安排行程、追蹤待辦，把每天過得清楚一點。
             名字來自一種相信——你對生活付出的，生活會用另一種方式回到你身上。
           </p>
-          <p className="about__meta">
-            {isAndroid ? "WebView · React · Kotlin · SQLite · 完全離線" : "Tauri 2 · React · Rust · SQLite · 完全離線"}
-          </p>
+          <p className="about__meta">Tauri 2 · React · Rust · SQLite · 完全離線</p>
         </div>
       </section>
 

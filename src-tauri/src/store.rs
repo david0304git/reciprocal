@@ -821,16 +821,16 @@ fn get_timetable(conn: &Connection, id: i64) -> Res<TimetableBlock> {
     )
     .optional()
     .map_err(sql_err)?
-    .ok_or_else(|| "找不到這項安排".to_string())
+    .ok_or_else(|| "找不到這個時段".to_string())
 }
 
 pub fn save_timetable(conn: &Connection, input: &TimetableInput) -> Res<TimetableBlock> {
     let title = input.title.trim();
     if title.is_empty() {
-        return Err("安排標題不能留空".into());
+        return Err("時段標題不能留空".into());
     }
     if !(1..=5).contains(&input.day) {
-        return Err("固定安排只支援星期一至星期五".into());
+        return Err("時段只支援星期一至星期五".into());
     }
     let start = normalise_time(Some(&input.start_time))?
         .ok_or_else(|| "請填寫開始時間".to_string())?;
@@ -863,7 +863,7 @@ pub fn save_timetable(conn: &Connection, input: &TimetableInput) -> Res<Timetabl
                 )
                 .map_err(sql_err)?;
             if changed == 0 {
-                return Err("找不到要更新的安排".into());
+                return Err("找不到要更新的時段".into());
             }
             get_timetable(conn, id)
         }

@@ -116,6 +116,7 @@ export const TimetableForm: React.FC<Props> = ({
               className="input"
               value={title}
               onChange={(changeEvent) => setTitle(changeEvent.target.value)}
+              placeholder="例如：深度工作、英文課、運動"
               autoFocus
               maxLength={60}
             />
@@ -130,7 +131,7 @@ export const TimetableForm: React.FC<Props> = ({
             />
           </div>
 
-          <div className="field-row field-row--times">
+          <div className="field-row">
             <div className="field">
               <span className="field__label">開始</span>
               <TimeField value={startTime} onChange={setStartTime} label="開始時間" />
@@ -167,6 +168,7 @@ export const TimetableForm: React.FC<Props> = ({
               rows={2}
               value={notes}
               onChange={(changeEvent) => setNotes(changeEvent.target.value)}
+              placeholder="這段時間要做什麼？"
             />
           </label>
         </form>

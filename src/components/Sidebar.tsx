@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { CalendarDays, ListChecks, Settings as SettingsIcon, Sun } from "lucide-react";
 import { useApp } from "../lib/store";
 import type { ViewKey } from "../lib/types";
@@ -24,8 +24,6 @@ const BrandMark: React.FC = () => (
 
 export const Sidebar: React.FC = () => {
   const { view, setView } = useApp();
-  const swipe = useRef<{ startY: number; swiped: boolean } | null>(null);
-  const lastSwipe = useRef(false);
   const isMac = document.documentElement.dataset.platform !== "windows";
   const shortcutPrefix = isMac ? "⌘" : "Ctrl+";
 
@@ -50,36 +48,7 @@ export const Sidebar: React.FC = () => {
               key={item.key}
               type="button"
               className={`nav__item ${view === item.key ? "nav__item--active" : ""}`}
-              // Swiping up on 時間表 pulls the timetable sheet instead of navigating.
-              onPointerDown={(event) => {
-                // Pull-up belongs to the phone; on the desktop the menu is click-only.
-                if (document.documentElement.dataset.platform !== "android") return;
-                if (item.key !== "tasks" || view !== "today") return;
-                swipe.current = { startY: event.clientY, swiped: false };
-              }}
-              onPointerMove={(event) => {
-                const started = swipe.current;
-                if (!started) return;
-                if (started.startY - event.clientY > 28) started.swiped = true;
-              }}
-              onPointerUp={() => {
-                const started = swipe.current;
-                swipe.current = null;
-                if (!started?.swiped) return;
-                lastSwipe.current = true;
-                // Only swallow the click that belongs to this gesture, never a later tap.
-                window.setTimeout(() => {
-                  lastSwipe.current = false;
-                }, 500);
-                window.dispatchEvent(new CustomEvent("reciprocal:open-timetable"));
-              }}
-              onClick={() => {
-                if (lastSwipe.current) {
-                  lastSwipe.current = false;
-                  return;
-                }
-                setView(item.key);
-              }}
+              onClick={() => setView(item.key)}
               aria-current={view === item.key ? "page" : undefined}
             >
               <Icon size={16} strokeWidth={1.9} />

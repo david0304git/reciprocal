@@ -1,17 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApp } from "../lib/store";
 import { api } from "../lib/api";
-import { ConfirmDialog, DateField, Modal, TimeField } from "./ui";
+import { ConfirmDialog, Modal, Segmented, TimeField } from "./ui";
 import type { AppleCalendarInfo, EventItem } from "../lib/types";
 import { formatShort, todayISO } from "../lib/date";
-import {
-  DEFAULT_EVENT_CATEGORIES,
-  EVENT_CATEGORIES_KEY,
-  readCustomEventCategories,
-  serializeEventCategories,
-} from "../lib/categories";
 
 const COLORS = ["#5B7DB1", "#3F7C6A", "#D98A5F", "#B06AA0", "#C2A33C", "#B4493A"];
+
+const CATEGORIES = ["個人", "工作", "社交", "健康", "學習"];
 
 interface Props {
   open: boolean;
@@ -33,8 +29,6 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [addingCategory, setAddingCategory] = useState(false);
-  const [categoryDraft, setCategoryDraft] = useState("");
   const [appleCalendars, setAppleCalendars] = useState<AppleCalendarInfo[]>([]);
   const [appleCalendarId, setAppleCalendarId] = useState<string | null>(null);
   const [appleCalendarsLoading, setAppleCalendarsLoading] = useState(false);
@@ -42,18 +36,6 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
   const appleEnabled = data?.settings.appleSyncEnabled === "1";
   const dedicatedCalendarId = data?.settings.appleCalendarId ?? null;
   const useAppleCategories = appleEnabled && appleCalendars.length > 0;
-  const customCategories = useMemo(
-    () => readCustomEventCategories(data?.settings),
-    [data?.settings],
-  );
-  // Built-ins first, then the user's own, then whatever this event already uses (so imported or
-  // previously deleted categories still show up as selected instead of silently resetting).
-  const categoryOptions = useMemo(() => {
-    const options = [...DEFAULT_EVENT_CATEGORIES, ...customCategories];
-    const current = event?.category ?? category;
-    if (current && !options.includes(current)) options.push(current);
-    return options;
-  }, [customCategories, event?.category, category]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,8 +50,6 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
     setNotes(event?.notes ?? "");
     setSaving(false);
     setConfirmDelete(false);
-    setAddingCategory(false);
-    setCategoryDraft("");
   }, [open, event, defaultDate]);
 
   useEffect(() => {
@@ -135,27 +115,6 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
     setSaving(false);
     if (saved) onClose();
   };
-
-  const updateCustomCategories = async (next: string[]) => {
-    await actions.setSetting(EVENT_CATEGORIES_KEY, serializeEventCategories(next));
-  };
-
-  const submitCategory = async () => {
-    const name = categoryDraft.trim().slice(0, 12);
-    if (!name) return;
-    if (!categoryOptions.includes(name)) {
-      await updateCustomCategories([...customCategories, name]);
-    }
-    setCategory(name);
-    setCategoryDraft("");
-    setAddingCategory(false);
-  };
-
-  const removeCustomCategory = async (name: string) => {
-    await updateCustomCategories(customCategories.filter((item) => item !== name));
-    if (category === name) setCategory(DEFAULT_EVENT_CATEGORIES[0]);
-  };
-
 
   return (
     <>
@@ -241,16 +200,22 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
               className="input"
               value={title}
               onChange={(changeEvent) => setTitle(changeEvent.target.value)}
+              placeholder="例如：與朋友午餐"
               autoFocus
               maxLength={80}
             />
           </label>
 
-          <div className="field-row field-row--date">
-            <div className="field">
+          <div className="field-row">
+            <label className="field">
               <span className="field__label">日期</span>
-              <DateField value={date} onChange={setDate} label="日期" />
-            </div>
+              <input
+                className="input"
+                type="date"
+                value={date}
+                onChange={(changeEvent) => setDate(changeEvent.target.value)}
+              />
+            </label>
             <div className="field field--checkbox">
               <label className="checkbox">
                 <input
@@ -264,7 +229,7 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
           </div>
 
           {!allDay ? (
-            <div className="field-row field-row--times">
+            <div className="field-row">
               <div className="field">
                 <span className="field__label">開始</span>
                 <TimeField value={startTime} onChange={setStartTime} label="開始時間" />
@@ -310,88 +275,12 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
             <>
               <div className="field">
                 <span className="field__label">分類</span>
-                <div className="category-row">
-                  {categoryOptions.map((item) => {
-                    const custom = customCategories.includes(item);
-                    return (
-                      <span
-                        key={item}
-                        className={`category-chip${category === item ? " is-active" : ""}`}
-                      >
-                        <button
-                          type="button"
-                          className="category-chip__main"
-                          onClick={() => setCategory(item)}
-                          aria-pressed={category === item}
-                        >
-                          {item}
-                        </button>
-                        {custom ? (
-                          <button
-                            type="button"
-                            className="category-chip__remove"
-                            onClick={() => void removeCustomCategory(item)}
-                            aria-label={`刪除分類「${item}」`}
-                          >
-                            ×
-                          </button>
-                        ) : null}
-                      </span>
-                    );
-                  })}
-                  <span className="category-chip category-chip--add">
-                    <button
-                      type="button"
-                      className="category-chip__main"
-                      onClick={() => setAddingCategory((current) => !current)}
-                      aria-expanded={addingCategory}
-                    >
-                      ＋ 自訂
-                    </button>
-                  </span>
-                </div>
-                {addingCategory ? (
-                  <div className="category-add">
-                    <input
-                      className="input"
-                      value={categoryDraft}
-                      onChange={(changeEvent) => setCategoryDraft(changeEvent.target.value)}
-                      maxLength={12}
-                      aria-label="新分類名稱"
-                      onKeyDown={(keyEvent) => {
-                        if (keyEvent.key === "Enter") {
-                          keyEvent.preventDefault();
-                          void submitCategory();
-                        }
-                        if (keyEvent.key === "Escape") {
-                          keyEvent.stopPropagation();
-                          setAddingCategory(false);
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn--soft btn--sm"
-                      onClick={() => void submitCategory()}
-                      disabled={!categoryDraft.trim()}
-                    >
-                      新增
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      onClick={() => {
-                        setCategoryDraft("");
-                        setAddingCategory(false);
-                      }}
-                    >
-                      取消
-                    </button>
-                  </div>
-                ) : null}
-                <p className="form-hint">
-                  自訂分類會存在本機資料庫，匯出備份時一併帶走。
-                </p>
+                <Segmented
+                  size="sm"
+                  value={category}
+                  onChange={(value) => setCategory(value)}
+                  options={CATEGORIES.map((item) => ({ value: item, label: item }))}
+                />
               </div>
 
               <div className="field">
@@ -418,6 +307,7 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
               className="input"
               value={location}
               onChange={(changeEvent) => setLocation(changeEvent.target.value)}
+              placeholder="例如：巷口的越南菜"
             />
           </label>
 
@@ -428,6 +318,7 @@ export const EventForm: React.FC<Props> = ({ open, event, defaultDate, onClose }
               rows={3}
               value={notes}
               onChange={(changeEvent) => setNotes(changeEvent.target.value)}
+              placeholder="需要準備什麼？"
             />
           </label>
         </form>

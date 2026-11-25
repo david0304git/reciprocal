@@ -2811,8 +2811,7 @@ input[type="checkbox"] {
 .toast-stack {
   position: fixed;
   right: 22px;
-  /* keep clear of the gesture bar now that the page paints edge-to-edge at the bottom */
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  bottom: 20px;
   z-index: 80;
   display: flex;
   flex-direction: column;
@@ -3572,7 +3571,7 @@ html[data-platform="macos"] .countdown-scrollbar {
   }
 
   .main__scroll {
-    padding: 24px 22px 40px;
+    padding: 0 22px 40px;
   }
 
   .board {
@@ -3922,6 +3921,10 @@ html[data-platform="windows"] .main__drag {
   min-height: calc(100vh - 86px);
   display: flex;
   flex-direction: column;
+}
+
+.home__head {
+  padding-top: 4px;
 }
 
 .home__clock {
@@ -4584,7 +4587,7 @@ html[data-ui-style="glass"] .main {
 }
 
 html[data-ui-style="glass"] .main__scroll {
-  padding: 24px 24px 44px;
+  padding: 0 24px 44px;
 }
 
 html[data-ui-style="glass"] .main__drag {
@@ -4604,7 +4607,7 @@ html[data-ui-style="glass"] .home__clock {
   padding: 2vh 0 3vh;
 }
 
-/* Liquid glass: the clock sits directly on the page — no glass panel, no border, no glow box. */
+/* Liquid glass: the home clock sits directly on the page — no glass panel, border or shadow. */
 html[data-ui-style="glass"] .home__clock-card {
   padding: 0;
   border-radius: 0;
@@ -5152,418 +5155,4 @@ html[data-platform="macos"][data-ui-style="glass"] .sidebar {
 
 html[data-platform="macos"][data-ui-style="glass"] .sidebar__drag {
   height: 8px;
-}
-
-/* ------------------------------------------------------------------
-   home — next-up countdown (scheme A)
-------------------------------------------------------------------- */
-
-.home-now__countdown {
-  margin: 6px 0 0;
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
-  color: var(--now-color, var(--accent));
-}
-
-html[data-ui-style="swiss"] .home-now__countdown {
-  font-size: 20px;
-  letter-spacing: -0.02em;
-}
-
-.home-now__hint {
-  margin: 8px 0 0;
-  padding-top: 8px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  font-size: 11px;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-html[data-ui-style="swiss"] .home-now__hint {
-  border-top-color: var(--border);
-}
-
-/* ------------------------------------------------------------------
-   home — agenda feed + fixed-schedule peek / sheet
-------------------------------------------------------------------- */
-
-.home__head--row {
-  display: flex;
-  /* align to the top so 主頁 sits at the same height as the other page names */
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-/* The feed replaces the old “panels” grid: clock on top, agenda underneath. */
-.home__clock {
-  flex: none;
-  padding: 8px 0 16px;
-}
-
-.home__agenda {
-  display: flex;
-  /* Grow into whatever height the clock leaves over, so a short list fills the page and three
-     cards fit without scrolling. With more rows it falls back to the minimum and the page scrolls. */
-  flex: 1 1 auto;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 10px;
-  padding-bottom: 12px;
-}
-
-/* uniform agenda rows: title + countdown, drag to re-order */
-.agenda-row {
-  position: relative;
-  display: flex;
-  overflow: hidden;
-  /* grow to fill the page, never shrink (a long list scrolls instead of squeezing) */
-  flex: 1 0 auto;
-  min-height: 56px;
-  max-height: 108px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  transition: transform 180ms cubic-bezier(0.22, 0.75, 0.3, 1), border-color 140ms ease,
-    background 140ms ease;
-  will-change: transform;
-}
-
-.agenda-row:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-hover);
-}
-
-.agenda-row.is-dragging {
-  z-index: 6;
-  transition: none;
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
-  cursor: grabbing;
-}
-
-.agenda-row__main {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 15px 16px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-}
-
-.agenda-row__title {
-  /* title and countdown split the row evenly */
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  display: block;
-  font-weight: 550;
-  line-height: 1.25;
-  color: var(--text);
-  /* font-size is set inline by AutoFitText (shrinks to fit, then wraps) */
-}
-
-/* Once the smallest size still does not fit, wrap up to two lines. */
-.agenda-row__title.auto-fit--wrap {
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow-wrap: anywhere;
-  line-height: 1.3;
-}
-
-.agenda-row__countdown {
-  flex: 1 1 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: right;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
-}
-
-.home__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 18px 16px;
-}
-
-.home__empty-title {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.home__empty-hint {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-tertiary);
-}
-
-/* --------------------------------------------------- timetable peek row */
-
-.timetable-peek {
-  position: relative;
-  display: flex;
-  flex: none;
-  /* Own the vertical drag: without this the WebView swallows it as a page scroll and the
-     pointer stream is cancelled, so the pull-up gesture never fires on a real device. */
-  touch-action: none;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  height: 42px;
-  padding: 8px 14px 0;
-  transition: height 240ms ease, opacity 200ms ease;
-  border: 0;
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-secondary);
-  text-align: left;
-}
-
-.timetable-peek__grip {
-  position: absolute;
-  top: 4px;
-  left: 50%;
-  width: 34px;
-  height: 3px;
-  border-radius: 999px;
-  background: var(--border-strong);
-  opacity: 0.75;
-  transform: translateX(-50%);
-}
-
-.timetable-peek__label {
-  flex: none;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--text-tertiary);
-}
-
-.timetable-peek--current .timetable-peek__label {
-  color: var(--accent-strong);
-}
-
-.timetable-peek__title {
-  flex: 0 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.timetable-peek__time {
-  flex: none;
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-.timetable-peek__chevron {
-  flex: none;
-  color: var(--text-tertiary);
-}
-
-.timetable-peek.is-hidden {
-  height: 0;
-  padding-top: 0;
-  border-top-width: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* --------------------------------------------------- timetable sheet */
-
-.timetable-sheet-backdrop {
-  /* Anchored inside .main so the panel opens right above the navigation bar (nav stays tappable). */
-  position: absolute;
-  inset: 0;
-  align-items: flex-end;
-  padding: 0;
-}
-
-.timetable-sheet {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  max-height: 72dvh;
-  padding: 12px 18px calc(16px + env(safe-area-inset-bottom, 0px));
-  border-radius: 22px 22px 0 0;
-  border: 1px solid var(--border);
-  border-bottom: 0;
-  background: var(--surface);
-  box-shadow: var(--shadow-lg);
-  touch-action: none;
-  animation: timetable-sheet-in 220ms cubic-bezier(0.22, 0.75, 0.3, 1) both;
-}
-
-@keyframes timetable-sheet-in {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.timetable-sheet__grip {
-  width: 38px;
-  height: 4px;
-  margin: 0 auto 8px;
-  border-radius: 999px;
-  background: var(--border-strong);
-  opacity: 0.8;
-}
-
-.timetable-sheet__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.timetable-sheet__title {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.timetable-sheet__body {
-  overflow-y: auto;
-  padding: 6px 0 2px;
-}
-
-.timetable-sheet__list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.timetable-sheet__row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-}
-
-.timetable-sheet__row:last-child {
-  border-bottom: 0;
-}
-
-.timetable-sheet__row.is-done {
-  opacity: 0.5;
-}
-
-.timetable-sheet__bar {
-  flex: none;
-  width: 3px;
-  height: 18px;
-  border-radius: 2px;
-}
-
-.timetable-sheet__time {
-  flex: none;
-  font-size: 11.5px;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-.timetable-sheet__name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13.5px;
-  font-weight: 550;
-}
-
-.timetable-sheet__row.is-current .timetable-sheet__name {
-  color: var(--accent-strong);
-  font-weight: 650;
-}
-
-.timetable-sheet__foot {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 10px;
-}
-
-/* ------------------------------------------------------------ swiss */
-
-html[data-ui-style="swiss"] .agenda-row,
-html[data-ui-style="swiss"] .home__empty,
-html[data-ui-style="swiss"] .timetable-sheet {
-  border-radius: 0;
-}
-
-html[data-ui-style="swiss"] .timetable-sheet {
-  border: 0;
-  border-top: 1px solid var(--border-strong);
-  background: var(--bg);
-  box-shadow: none;
-}
-
-html[data-ui-style="swiss"] .timetable-peek__grip,
-html[data-ui-style="swiss"] .timetable-sheet__grip {
-  border-radius: 0;
-}
-
-/* ------------------------------------------------------------------
-   one long sheet — the four pages sit side by side, switching moves the camera
-------------------------------------------------------------------- */
-
-.view-viewport {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.view-track {
-  display: flex;
-  width: 400%;
-  height: 100%;
-  transition: transform 340ms cubic-bezier(0.22, 0.75, 0.3, 1);
-  will-change: transform;
-}
-
-/* Each panel is its own vertical scroller, so a page keeps its scroll position while off-screen. */
-.view-panel {
-  flex: 0 0 25%;
-  width: 25%;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior-y: contain;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .view-track {
-    transition: none;
-  }
 }
