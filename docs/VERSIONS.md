@@ -1,0 +1,104 @@
+# 版本與平台差異（Desktop ／ Android）
+
+> 一份文件管理兩件事：**每個版本出了什麼**、**桌面版與 Android 版哪裡不一樣**。
+> 改動任一平台時，請在同一個 commit 更新這份表；發佈前依「發佈檢查表」走一遍。
+
+平台代號：🖥 = macOS／Windows（Tauri），📱 = Android（Kotlin ＋ WebView）。
+
+## 版本記錄
+
+| 版本 | 平台 | 內容 |
+| --- | --- | --- |
+| 0.1.0 | 🖥 | 首個版本：主頁時鐘、日曆、習慣、待辦、Apple 日曆整合 |
+| 0.1.1 | 🖥 | 修正與微調（見 release notes） |
+| 0.1.2 | 🖥 | Windows 側欄快捷鍵提示改為 `Ctrl+…`（macOS 維持 `⌘`） |
+| 0.1.3 | 🖥 | 主頁／日曆介面重整：移除「習慣」「統計」；「今日」→「主頁」、「事務」→「安排」 |
+| 0.1.4 | 🖥 | 主頁兩張卡等高、底部對齊 |
+| 0.1.5 | 🖥 | 日曆不再顯示「到期安排」 |
+| 0.1.6 | 🖥 | Apple 事件重複匯入修正（複合鍵 `external_id`＋日期＋開始時間＋全天） |
+| 0.1.7 | 🖥 | 介面風格（紙本手帳／液態玻璃／瑞士工具）、液態玻璃側欄交通燈、下拉選單 portal 定位 |
+| **0.1.8** | 🖥 📱 | **線稿沙漏圖標＋Android 版首次發佈**；桌面版介面同步手機版（見下） |
+
+### 0.1.8 詳細差異
+
+- **圖標**：兩平台都是線稿沙漏（紙色 `#F4F1E9`、品牌綠 `#27614F`）。桌面 mark 佔 tile **58%**；
+  Android adaptive icon 幾何再乘 **0.78**（高度 ≈42dp，依使用者回饋縮小）。母檔：`scripts/make-desktop-icons.mjs`。
+- **共用前端**：桌面版改用與 Android 版相同的前端（`src/`），因此以下全部在桌面也生效：
+  主頁行程清單（7／14／30 天、名稱＋倒數、自動縮小標題、兩行換行、長按拖曳排序並持久化）、
+  「安排」→「時間表」、導航上方 peek 列＋上拉面板（只有主頁）、四頁左至右軌道＋鏡頭平移、
+  自製月曆／時間選擇器、自訂行程分類、待辦用語。
+- **液態玻璃**：側欄（菜單）與主頁時鐘都**不加框**。
+- **排版**：頁名距面板上緣 28px 且四頁對齊；行程列高度上限 108px，三張一屏不滾動、無色點。
+
+## 平台差異
+
+| 項目 | 🖥 桌面 | 📱 Android |
+| --- | --- | --- |
+| 導航 | 左側側欄（可拖曳視窗、⌘1–⌘3 快捷鍵） | 底部導航 4 項（主頁／日曆／時間表／設定） |
+| 介面風格 | 三種（紙本手帳／液態玻璃／瑞士工具） | 相同三種 |
+| 主頁／清單行為 | 相同前端 | 相同前端 |
+| 固定時段面板 | 點擊或 pointer 拖曳上拉 | 觸控上拉（`touch-action: none`） |
+| 前後端 | Rust（`src-tauri/`）＋ SQLite | Kotlin 橋接（`android/app/`）＋ SQLite，指令與 Rust 對等 |
+| 系統日曆 | EventKit（macOS 14+，選用） | CalendarContract（雙向同步） |
+| 待辦看板拖放 | 滑鼠可拖放改狀態 | ❌ HTML5 DnD 在觸控無效 → 點卡片改狀態 |
+| 資料位置 | `~/Library/Application Support/com.lutszhong.reciprocal/`（macOS）<br>`%APPDATA%\com.lutszhong.reciprocal\`（Windows） | 應用程式私有目錄 `databases/reciprocal.db` |
+| 更新機制 | GitHub `/releases/latest` 檢查 | 同左（`/releases/latest`） |
+| 圖標比例 | 沙漏 58% tile | 沙漏 39%（×0.78，安全區留白） |
+| 簽章 | macOS ad-hoc；Windows 未簽章 | Android debug keystore（`CN=Android Debug`） |
+| 檔案格式／備份 | JSON（`tasks`／`events`／`timetable`／`habits`／`settings`） | 相同格式，可互換 |
+
+## 兩份前端的同步規則
+
+repo 內有兩份前端：`src/`（桌面）與 `android/web/`（Android，給 `WebViewAssetLoader`）。**內容必須相同**：
+
+```bash
+rsync -a --exclude .DS_Store src/ android/web/src/
+diff -rq src android/web/src        # 必須無輸出
+```
+
+例外（刻意不同、不要覆蓋）：
+
+| 檔案 | 差異 |
+| --- | --- |
+| `android/web/vite.config.ts` | 多 `base: "./"`（WebView 資產用相對路徑） |
+| `android/web/index.html` | 載入 `tauri-shim.js`（桌面端無害，會自行停用） |
+| `android/web/src/styles/android.css` | Android 專屬樣式（由 `main.tsx` 匯入，桌面不載入） |
+| `android/web/src/main.tsx` | 平台判斷含 `Android`（桌面維持 `macos`／`windows`） |
+
+## 版本號要同步的檔案
+
+`package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml`、`src-tauri/Cargo.lock`、
+`android/app/build.gradle.kts`（`versionName` ＋ `versionCode`，目前 0.1.8／2）。
+
+## 發佈檢查表
+
+```bash
+# 1) 建置
+npm run build && npm run tauri build                       # macOS（產物在 src-tauri/target/release/bundle）
+cd android && ./scripts/build.sh :app:assembleRelease && cd ..   # Android（另需 apksigner 簽章）
+
+# 2) 打包（沿用現有命名）
+ditto -c -k --sequesterRsrc --keepParent \
+  src-tauri/target/release/bundle/macos/Reciprocal.app /tmp/Reciprocal-<ver>-macos-arm64.zip
+
+# 3) Windows：push tag 觸發 .github/workflows/windows.yml，下載 artifact
+git tag -f v<ver> && git push origin v<ver> --force
+gh run watch <run-id> -R david0304git/reciprocal
+gh run download <run-id> -R david0304git/reciprocal -D /tmp/win
+
+# 4) 上傳＋校驗（同一版號覆蓋時：先刪舊資產、重算 SHA256SUMS.txt）
+gh release upload v<ver> <macOS.zip> <win.exe> <android.apk> SHA256SUMS.txt -R david0304git/reciprocal
+gh release download v<ver> -R david0304git/reciprocal -D /tmp/verify
+(cd /tmp/verify && shasum -a 256 -c SHA256SUMS.txt)
+```
+
+- **不要標 Prerelease**：桌面版的更新檢查讀 `/releases/latest`，標成 prerelease 會讓更新提示消失
+  （Android 版讀同一支 API）。
+- APK 用 Android debug keystore 簽章；換金鑰需先解除安裝。
+
+## 待辦／未完成
+
+1. 桌面版尚未實測的互動：主頁長按拖曳排序（滑鼠）、peek 上拉手感、⌘1–⌘3 在軌道模式下的回歸。
+2. 把兩份前端合成單一來源（建置時共用），可省掉同步步驟。
+3. 產生正式 Android release keystore，改由 CI 簽章。
+4. 看板在手機改用 Pointer Events 拖放。

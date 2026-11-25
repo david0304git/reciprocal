@@ -89,6 +89,11 @@ cd android
 
 > 液態玻璃使用 `backdrop-filter`；低階 GPU 若覺得耗電，可切回紙本或瑞士。三種風格共用同一份資料與功能。
 
+## 版本與平台差異
+
+每個版本出了什麼、桌面與 Android 哪裡不一樣、版本號同步與發佈檢查表，統一寫在
+[`docs/VERSIONS.md`](docs/VERSIONS.md)。
+
 ## 技術架構
 
 | 層 | 選擇 |
